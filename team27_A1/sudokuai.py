@@ -16,34 +16,46 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     def __init__(self):
         super().__init__()
 
-    def get_used_row_or_col_values(self, game_state: GameState, index, get_col):
+    def get_used_row_col_values(self, game_state: GameState, move: Move):
+        # TODO: verify correctness
         values_found = []
 
-        for i in range(game_state.board.N):
-            if get_col:
-                # Get values occurring in column, iterate over rows
-                cell_value = game_state.board.get(i, index)
-            else:
-                # Get values occurring in row, iterate over columns
-                cell_value = game_state.board.get(index, i)
+        for it in range(game_state.board.N):
+            row_part = game_state.board.get(it, move.j)
+            col_part = game_state.board.get(move.i, it)
 
-            if cell_value not in values_found:
-                values_found.append(cell_value)
+            if row_part not in values_found:
+                values_found.append(row_part)
+            if col_part not in values_found:
+                values_found.append(col_part)
 
         return values_found
 
-    def get_used_block_values(self, game_state: GameState, i, j):
-        # TODO: any easy way to determine which block (i, j) is in?
-        # TODO: actually implement this
+    def get_used_block_values(self, game_state: GameState, move: Move):
         values_found = []
 
-        raise NotImplementedError()
+        block_rows = game_state.board.m
+        block_cols = game_state.board.n
+        # Truncation to integer == floor but with type casting included
+        vertical_block = int(move.i / block_rows)
+        horizontal_block = int(move.j / block_cols)
+
+        for i in range(block_cols):
+            for j in range(block_rows):
+                cell_value = game_state.board.get(vertical_block*block_rows + j,
+                                                  horizontal_block*block_cols + i)
+                if cell_value not in values_found:
+                    values_found.append(cell_value)
 
         return values_found
 
     def generate_legal_moves(self, game_state: GameState):
-        # Note to self: not just possible, actually legal
-        # TODO: implement this
+        # Not just possible, actually legal
+        # TODO: verify correctness
+        # TODO: I try to do the same as the original and hopefully make
+        #   no code assumptions that will break. Hopefully. Maybe. Doubt.
+
+        N = game_state.board.N
 
         possible_moves = [Move(i, j, -1) for i in range(N) \
                                          for j in range(N) \
@@ -52,31 +64,43 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         legal_moves = []
 
         for move in possible_moves:
-            for value in range(1, N+1):
-                print("AAAAA")
+            # Check for this cell which values already appear in
+            #   its row, column and block
+            values_in_row_col = self.get_used_row_col_values(game_state, move)
+            values_in_block = self.get_used_block_values(game_state, move)
 
-        raise NotImplementedError()
+            for value in range(1, N+1):
+                if not (TabooMove(move.i, move.j, value) in game_state.taboo_moves or \
+                        value in values_in_block or value in values_in_row_col):
+                    legal_moves.append(Move(move.i, move.j, value))
+
+        return legal_moves
 
     # N.B. This is a very naive implementation.
     def compute_best_move(self, game_state: GameState) -> None:
         # Get total board size (doubles as highest possible value)
-        N = game_state.board.N
+        # N = game_state.board.N
 
-        def possible(i, j, value):
-            # TODO: this does not check legality, only if the square is non-empty
-            return game_state.board.get(i, j) == SudokuBoard.empty and not TabooMove(i, j, value) in game_state.taboo_moves
+        # def possible(i, j, value):
+        #     # TODO: this does not check legality, only if the square is non-empty
+        #     return game_state.board.get(i, j) == SudokuBoard.empty and not TabooMove(i, j, value) in game_state.taboo_moves
 
 
 
-        print(game_state.board.get(game_state.board.m-1,game_state.board.n-1))
-        print(game_state.board.get(N-1,N-1))
-        print(N)
-        all_moves = [Move(i, j, -1) for i in range(N) \
-                                       for j in range(N) \
-                                       for value in range(1, N+1) \
-                     if possible(i, j, value)]
-        move = random.choice(all_moves)
+        # print(game_state.board.get(game_state.board.m-1,game_state.board.n-1))
+        # print(game_state.board.get(N-1,N-1))
+        # print(N)
+        # all_moves = [Move(i, j, value) for i in range(N) \
+        #                                for j in range(N) \
+        #                                for value in range(1, N+1) \
+        #              if possible(i, j, value)]
+        # move = random.choice(all_moves)
+        # print('a')
+        legal_moves = self.generate_legal_moves(game_state)
+        # print('moves generated')
+        move = random.choice(legal_moves)
+
         self.propose_move(move)
         while True:
             time.sleep(0.2)
-            self.propose_move(random.choice(all_moves))
+            self.propose_move(random.choice(legal_moves))
