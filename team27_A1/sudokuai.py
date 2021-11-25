@@ -6,7 +6,7 @@ import random
 import time
 from typing import Set, List
 
-from competitive_sudoku.sudoku import GameState, Move, SudokuBoard, TabooMove
+from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
 
 
