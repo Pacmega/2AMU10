@@ -4,6 +4,8 @@
 
 import random
 import time
+from typing import Set, List
+
 from competitive_sudoku.sudoku import GameState, Move, SudokuBoard, TabooMove
 import competitive_sudoku.sudokuai
 
@@ -16,83 +18,108 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     def __init__(self):
         super().__init__()
 
-    def get_used_row_col_values(self, game_state: GameState, move: Move):
-        values_found = []
+    def compute_all_legal_moves(self, game_state: GameState) -> List[Move]:
+        """
+        Computes all the possible moves in the game state, minus the taboo moves specified by the GameState
+        """
 
-        for it in range(game_state.board.N):
-            row_part = game_state.board.get(it, move.j)
-            col_part = game_state.board.get(move.i, it)
+        # First get all allowed numbers for each of the rows and columns
+        rows = {}
+        columns = {}
+        for i in range(game_state.board.N):
+            rows[i] = self.allowed_numbers_in_row(game_state, i)
+            columns[i] = self.allowed_numbers_in_column(game_state, i)
 
-            if row_part not in values_found:
-                values_found.append(row_part)
-            if col_part not in values_found:
-                values_found.append(col_part)
+        # Next, get all allowed numbers for each of the blocks
+        blocks = {}
+        horizontal_dividers = range(0, game_state.board.N, game_state.board.n)
+        vertical_dividers = range(0, game_state.board.N, game_state.board.m)
+        all_combinations = []
+        for i in vertical_dividers:
+            for j in horizontal_dividers:
+                all_combinations.append((i, j))
 
-        return values_found
+        for block_index in all_combinations:
+            blocks[block_index] = self.allowed_numbers_in_block(game_state, block_index[0], block_index[1])
 
-    def get_used_block_values(self, game_state: GameState, move: Move):
-        values_found = []
+        # Consequently, loop over each of the empty squares;
+        # take the intersection of allowed moves for the row, column and block
+        allowed_moves = {}
+        for i in range(game_state.board.N):
+            for j in range(game_state.board.N):
+                if game_state.board.get(i, j) == game_state.board.empty:
+                    row_allowed = rows[i]
+                    column_allowed = columns[j]
+                    blocks_allowed = blocks[(i - (i % game_state.board.m), j - (j % game_state.board.n))]
 
-        block_rows = game_state.board.m
-        block_cols = game_state.board.n
-        # Truncation to integer == floor but with type casting included
-        vertical_block = int(move.i / block_rows)
-        horizontal_block = int(move.j / block_cols)
+                    allowed = row_allowed.intersection(column_allowed).intersection(blocks_allowed)
 
-        for i in range(block_cols):
-            for j in range(block_rows):
-                cell_value = game_state.board.get(vertical_block*block_rows + j,
-                                                  horizontal_block*block_cols + i)
-                if cell_value not in values_found:
-                    values_found.append(cell_value)
+                    allowed_moves[(i, j)] = allowed
 
-        return values_found
+        keys = allowed_moves.keys()
 
-    def generate_legal_moves(self, game_state: GameState):
-        # Not just possible, actually legal
+        # Lastly, remove all taboo moves
+        for taboo_move in game_state.taboo_moves:
+            if (taboo_move.i, taboo_move.j) in list(keys):
+                square_moves = allowed_moves[(taboo_move.i, taboo_move.j)]
+                if taboo_move.value in square_moves:
+                    allowed_moves.get((taboo_move.i, taboo_move.j)).remove(taboo_move.value)
 
-        N = game_state.board.N
+        # Write everything to a list
+        moves_list = []
+        for key in keys:
+            moves = allowed_moves[key]
+            for move in moves:
+                moves_list.append(Move(key[0], key[1], move))
 
-        possible_moves = [Move(i, j, -1) for i in range(N) \
-                                         for j in range(N) \
-                              if game_state.board.get(i, j) == SudokuBoard.empty]
+        return moves_list
 
-        legal_moves = []
+    def allowed_numbers_in_block(self, game_state: GameState, row: int, column: int) -> Set[int]:
+        """
+        Calculates the allowed numbers to be placed in the block, given the game state and any row and column.
+        Does not check whether row and column are in the board parameters.
+        """
+        numbers_in_block = set(())
+        for i in range(row - (row % game_state.board.m), row + (game_state.board.m - (row % game_state.board.m))):
+            for j in range(column - (column % game_state.board.n),
+                           column + (game_state.board.n - (column % game_state.board.n))):
+                value = game_state.board.get(i, j)
+                if value is not game_state.board.empty:
+                    numbers_in_block.add(value)
 
-        for move in possible_moves:
-            # Check for this cell which values already appear in
-            #   its row, column and block
-            values_in_row_col = self.get_used_row_col_values(game_state, move)
-            values_in_block = self.get_used_block_values(game_state, move)
+        all_numbers = set((range(1, game_state.board.N + 1)))
+        return all_numbers.difference(numbers_in_block)
 
-            for value in range(1, N+1):
-                if not (TabooMove(move.i, move.j, value) in game_state.taboo_moves or \
-                        value in values_in_block or value in values_in_row_col):
-                    legal_moves.append(Move(move.i, move.j, value))
+    def allowed_numbers_in_row(self, game_state: GameState, row: int) -> Set[int]:
+        """
+        Calculates the allowed numbers to be placed in the row, given the game state and any row index.
+        Does not check whether row is in the board parameters.
+        """
+        numbers_in_row = set(())
+        for column in range(game_state.board.N):
+            value = game_state.board.get(row, column)
+            if value is not game_state.board.empty:
+                numbers_in_row.add(value)
 
-        return legal_moves
+        all_numbers = set((range(1, game_state.board.N + 1)))
+        return all_numbers.difference(numbers_in_row)
 
-    # N.B. This is a very naive implementation.
+    def allowed_numbers_in_column(self, game_state: GameState, column: int):
+        """
+        Calculates the allowed numbers to be placed in the column, given the game state and any column index.
+        Does not check whether column is in the board parameters.
+        """
+        numbers_in_column = set(())
+        for row in range(game_state.board.N):
+            value = game_state.board.get(row, column)
+            if value is not game_state.board.empty:
+                numbers_in_column.add(value)
+
+        all_numbers = set((range(1, game_state.board.N + 1)))
+        return all_numbers.difference(numbers_in_column)
+
     def compute_best_move(self, game_state: GameState) -> None:
-        # Get total board size (doubles as highest possible value)
-        # N = game_state.board.N
-
-        # def possible(i, j, value):
-        #     return game_state.board.get(i, j) == SudokuBoard.empty and not TabooMove(i, j, value) in game_state.taboo_moves
-
-
-
-        # print(game_state.board.get(game_state.board.m-1,game_state.board.n-1))
-        # print(game_state.board.get(N-1,N-1))
-        # print(N)
-        # all_moves = [Move(i, j, value) for i in range(N) \
-        #                                for j in range(N) \
-        #                                for value in range(1, N+1) \
-        #              if possible(i, j, value)]
-        # move = random.choice(all_moves)
-        # print('a')
-        legal_moves = self.generate_legal_moves(game_state)
-        # print('moves generated')
+        legal_moves = self.compute_all_legal_moves(game_state)
         move = random.choice(legal_moves)
 
         self.propose_move(move)
