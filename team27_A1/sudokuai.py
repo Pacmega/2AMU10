@@ -3,7 +3,6 @@
 #  https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import random
-import time
 from typing import Set, List
 
 from competitive_sudoku.sudoku import GameState, Move
@@ -115,29 +114,40 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     def compute_best_move(self, game_state: GameState) -> None:
         legal_moves = self.compute_all_legal_moves(game_state)
         move = random.choice(legal_moves)
-        # Propose a random legal move for now
-        print(f'Evaluating & proposing {move}')
-        print(f'Determined score: {self.eval_function(game_state, move)}')
+        # Propose a random legal move as first move (to not lose)
         self.propose_move(move)
 
-        while True:
-            time.sleep(0.2)
-            move = random.choice(legal_moves)
-            print(f'Evaluating & proposing {move}')
-            print(f'Determined score: {self.eval_function(game_state, move)}')
-            self.propose_move(move)
+        # @everyone: this is how to determine which player you're acting as.
+        #   simulate_move does this internally as well.
+        agent_player_number = len(game_state.moves) % 2 + 1
+        minimax_depth = 1
+
+        # while True:
+        #     move = self.minimax(game_state, minimax_depth, 1)
+        #     self.propose_move(move)
+        #     minimax_depth += 1
 
     def minimax(self, game_state: GameState, depth: int, maximizing_player: int):
         pass
 
-    def eval_function(self, game_state: GameState, move: Move) -> int:
+    def simulate_move(self, game_state: GameState, move: Move) -> GameState:
+        """
+        Simulates the execution of the given Move on the given GameState. This function
+        does not check whether a move might be taboo, and instead just executes it.
+        The function internally deduces from the length of game_state.moves
+        for which player the given move should be played.
+        @param game_state: The GameState to execute/simulate the given move on.
+        @param move: The move to execute/simulate on the given GameState.
+        @return: The new GameState after this move is performed.
+                   Scores, moves and board are updated.
+        """
         score = 0
         regions_completed = 0
-        move_row = move.i
-        move_col = move.j
 
         future_state = deepcopy(game_state)
+        simulating_for = len(future_state.moves) % 2 + 1
         future_state.board.put(move.i, move.j, move.value)
+        future_state.moves.append(move)
 
         # Play the passed move on the board and see how many points
         #   would be earned.
@@ -145,12 +155,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         #   would produce for the playing that plays it
 
         block_values_left = len(self.allowed_numbers_in_block(future_state,
-                                                              move_row,
-                                                              move_col))
+                                                              move.i,
+                                                              move.j))
         row_values_left = len(self.allowed_numbers_in_row(future_state,
-                                                          move_row))
+                                                          move.i))
         col_values_left = len(self.allowed_numbers_in_column(future_state,
-                                                             move_col))
+                                                             move.j))
 
         if block_values_left == 0:
             regions_completed += 1
@@ -166,4 +176,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         elif regions_completed == 3:
             score = 7
 
-        return score
+        if simulating_for == 1:
+            future_state.scores[0] += score
+        else:
+            future_state.scores[1] += score
+
+        return future_state
