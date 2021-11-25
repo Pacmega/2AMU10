@@ -72,25 +72,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         return legal_moves
 
-    # N.B. This is a very naive implementation.
     def compute_best_move(self, game_state: GameState) -> None:
-        # Get total board size (doubles as highest possible value)
-        # N = game_state.board.N
-
-        # def possible(i, j, value):
-        #     return game_state.board.get(i, j) == SudokuBoard.empty and not TabooMove(i, j, value) in game_state.taboo_moves
-
-
-
-        # print(game_state.board.get(game_state.board.m-1,game_state.board.n-1))
-        # print(game_state.board.get(N-1,N-1))
-        # print(N)
-        # all_moves = [Move(i, j, value) for i in range(N) \
-        #                                for j in range(N) \
-        #                                for value in range(1, N+1) \
-        #              if possible(i, j, value)]
-        # move = random.choice(all_moves)
-        # print('a')
         legal_moves = self.generate_legal_moves(game_state)
         # print('moves generated')
         move = random.choice(legal_moves)
