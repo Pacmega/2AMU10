@@ -99,3 +99,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         while True:
             time.sleep(0.2)
             self.propose_move(random.choice(legal_moves))
+
+    def minimax(self, game_state: GameState, depth: int, maximizing_player: int):
+        pass
+
+    def eval_function(self, game_state: GameState, move: Move):
+        pass
