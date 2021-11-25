@@ -6,6 +6,7 @@ import random
 import time
 from competitive_sudoku.sudoku import GameState, Move, SudokuBoard, TabooMove
 import competitive_sudoku.sudokuai
+from copy import deepcopy
 
 
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
@@ -23,9 +24,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             row_part = game_state.board.get(it, move.j)
             col_part = game_state.board.get(move.i, it)
 
-            if row_part not in values_found:
+            if row_part != 0 and row_part not in values_found:
                 values_found.append(row_part)
-            if col_part not in values_found:
+            if col_part != 0 and col_part not in values_found:
                 values_found.append(col_part)
 
         return values_found
@@ -103,5 +104,28 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     def minimax(self, game_state: GameState, depth: int, maximizing_player: int):
         pass
 
-    def eval_function(self, game_state: GameState, move: Move):
-        pass
+    def eval_function(self, game_state: GameState, move: Move) -> int:
+        score = 0
+        regions_completed = 0
+        move_row = move.i
+        move_col = move.j
+
+        future_state = deepcopy(game_state)
+        future_state.board.put(move.i, move.j, move.value)
+
+        # Play the passed move on the board and see how many points
+        #   would be earned.
+        # For now, this just returns the amount of points this particular move
+        #   would produce for the playing that plays it
+
+        nr_values_in_full_element = game_state.board.N
+
+        # allowed_numbers_in_block
+        values_in_row_col = self.get_used_row_col_values(game_state, move)
+        values_in_block = self.get_used_block_values(game_state, move)
+
+        if len(values_in_block) == nr_values_in_full_element:
+            regions_completed += 1
+
+
+        return score
