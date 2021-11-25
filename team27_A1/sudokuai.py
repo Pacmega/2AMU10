@@ -6,7 +6,7 @@ import random
 import time
 from typing import Set, List
 
-from competitive_sudoku.sudoku import GameState, Move, SudokuBoard, TabooMove
+from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
 
 
@@ -31,15 +31,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             columns[i] = self.allowed_numbers_in_column(game_state, i)
 
         # Next, get all allowed numbers for each of the blocks
-        blocks = {}
-        horizontal_dividers = range(0, game_state.board.N, game_state.board.n)
-        vertical_dividers = range(0, game_state.board.N, game_state.board.m)
-        all_combinations = []
-        for i in vertical_dividers:
-            for j in horizontal_dividers:
-                all_combinations.append((i, j))
+        all_block_indices = [(i, j)
+                             for i in range(0, game_state.board.N, game_state.board.m)
+                             for j in range(0, game_state.board.N, game_state.board.n)]
 
-        for block_index in all_combinations:
+        blocks = {}
+        for block_index in all_block_indices:
             blocks[block_index] = self.allowed_numbers_in_block(game_state, block_index[0], block_index[1])
 
         # Consequently, loop over each of the empty squares;
@@ -48,29 +45,25 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         for i in range(game_state.board.N):
             for j in range(game_state.board.N):
                 if game_state.board.get(i, j) == game_state.board.empty:
-                    row_allowed = rows[i]
-                    column_allowed = columns[j]
-                    blocks_allowed = blocks[(i - (i % game_state.board.m), j - (j % game_state.board.n))]
+                    allowed_moves[(i, j)] = rows[i]\
+                        .intersection(columns[j])\
+                        .intersection(blocks[(i - (i % game_state.board.m), j - (j % game_state.board.n))])
 
-                    allowed = row_allowed.intersection(column_allowed).intersection(blocks_allowed)
-
-                    allowed_moves[(i, j)] = allowed
-
-        keys = allowed_moves.keys()
+        all_empty_squares = allowed_moves.keys()
 
         # Lastly, remove all taboo moves
         for taboo_move in game_state.taboo_moves:
-            if (taboo_move.i, taboo_move.j) in list(keys):
+            if (taboo_move.i, taboo_move.j) in list(all_empty_squares):
                 square_moves = allowed_moves[(taboo_move.i, taboo_move.j)]
                 if taboo_move.value in square_moves:
                     allowed_moves.get((taboo_move.i, taboo_move.j)).remove(taboo_move.value)
 
         # Write everything to a list
         moves_list = []
-        for key in keys:
-            moves = allowed_moves[key]
+        for square in all_empty_squares:
+            moves = allowed_moves[square]
             for move in moves:
-                moves_list.append(Move(key[0], key[1], move))
+                moves_list.append(Move(square[0], square[1], move))
 
         return moves_list
 
@@ -104,7 +97,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         all_numbers = set((range(1, game_state.board.N + 1)))
         return all_numbers.difference(numbers_in_row)
 
-    def allowed_numbers_in_column(self, game_state: GameState, column: int):
+    def allowed_numbers_in_column(self, game_state: GameState, column: int) -> Set[int]:
         """
         Calculates the allowed numbers to be placed in the column, given the game state and any column index.
         Does not check whether column is in the board parameters.
