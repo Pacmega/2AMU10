@@ -17,7 +17,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         super().__init__()
 
     def get_used_row_col_values(self, game_state: GameState, move: Move):
-        # TODO: verify correctness
         values_found = []
 
         for it in range(game_state.board.N):
@@ -51,9 +50,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     def generate_legal_moves(self, game_state: GameState):
         # Not just possible, actually legal
-        # TODO: verify correctness
-        # TODO: I try to do the same as the original and hopefully make
-        #   no code assumptions that will break. Hopefully. Maybe. Doubt.
 
         N = game_state.board.N
 
@@ -82,7 +78,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         # N = game_state.board.N
 
         # def possible(i, j, value):
-        #     # TODO: this does not check legality, only if the square is non-empty
         #     return game_state.board.get(i, j) == SudokuBoard.empty and not TabooMove(i, j, value) in game_state.taboo_moves
 
 
