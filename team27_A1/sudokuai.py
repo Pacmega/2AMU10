@@ -122,13 +122,43 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         agent_player_number = len(game_state.moves) % 2 + 1
         minimax_depth = 1
 
-        # while True:
-        #     move = self.minimax(game_state, minimax_depth, 1)
-        #     self.propose_move(move)
-        #     minimax_depth += 1
+        while True:
+            move = self.minimax(game_state, minimax_depth, 1)[1]
+            value = self.minimax(game_state, minimax_depth, 1)[0]
+            self.propose_move(move)
+            minimax_depth += 1
 
     def minimax(self, game_state: GameState, depth: int, maximizing_player: int):
-        pass
+        future_state = deepcopy(game_state)
+        player = len(future_state.moves) % 2 + 1
+        if depth == 1 or game_state.board.empty:
+            return game_state.scores[player], None
+        if maximizing_player == 1:
+            possible_moves = self.compute_all_legal_moves(game_state)
+            for move in possible_moves:
+                new_game_state = self.simulate_move(game_state, move)
+                new_move = self.minimax(new_game_state, depth-1, 0)
+                new_score = new_game_state.scores[player]
+                old_score = game_state.scores[player]
+                #not sure if this is correct
+                if (new_score > old_score):
+                    best_move = move
+                else:
+                    best_move = new_move
+            return best_move
+        if maximizing_player == 0: 
+            possible_moves = self.compute_all_legal_moves(game_state)
+            for move in possible_moves:
+                new_game_state = self.simulate_move(game_state, move)
+                new_move = self.minimax(new_game_state, depth-1, 1)
+                new_score = new_game_state.scores[player]
+                old_score = game_state.scores[player]
+                #not sure if this is correct
+                if (new_score < old_score):
+                    best_move = move
+                else:
+                    best_move = new_move
+            return best_move
 
     def simulate_move(self, game_state: GameState, move: Move) -> GameState:
         """
