@@ -217,7 +217,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         return future_state
 
     
-    def evaluate(self, gamestate: GameState, maximizing_player: int) -> int:
+    def evaluate(self, game_state: GameState, maximizing_player: int) -> int:
         """
         Evaluates the gamestate by comparing the scores of the two players. 
         @param game_state: The GameState to evaluate.
@@ -226,10 +226,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         """
         value = 0
-        player = len(gamestate.moves) % 2 + 1
-        if gamestate.scores[player-1] > gamestate.scores[abs(player-2)] and maximizing_player == 1:
+        player = len(game_state.moves) % 2 + 1
+        if game_state.scores[player-1] > game_state.scores[abs(player-2)] and maximizing_player == 1:
             value += 10
-        if gamestate.scores[abs(player-2)] > gamestate.scores[player-1] and maximizing_player == 0:
+        if game_state.scores[abs(player-2)] > game_state.scores[player-1] and maximizing_player == 0:
             value -= 10
         
         return value
