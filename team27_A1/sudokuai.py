@@ -112,55 +112,53 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         return all_numbers.difference(numbers_in_column)
 
     def compute_best_move(self, game_state: GameState) -> None:
-        legal_moves = self.compute_all_legal_moves(game_state)
-        move = random.choice(legal_moves)
-        # Propose a random legal move as first move (to not lose)
-        self.propose_move(move)
-
-        # @everyone: this is how to determine which player you're acting as.
-        #   simulate_move does this internally as well.
-        agent_player_number = len(game_state.moves) % 2 + 1
-        minimax_depth = 1
-
+        i = 1
         while True:
-            value, move = self.minimax(game_state, minimax_depth, 1)
-            self.propose_move(move)
-            minimax_depth += 1
+            if self.board_filled_in(game_state):
+                break
 
-    def minimax(self, game_state: GameState, depth: int, maximizing_player: int):
-        if depth == 1 or game_state.board.empty:
-            #it did not let me return None, it says None has no index i
-            #i have no idea what to put here. i tried to make a move  
-            i = 0
-            j = 0
-            value = -1
-            move = Move(i, j, value)
-            return self.evaluate(game_state, maximizing_player), move
-        if maximizing_player == 1:
-            possible_moves = self.compute_all_legal_moves(game_state)
-            if len(possible_moves) == 0:
-                return 0, 0
+            value, optimal_move = self.minimax(game_state, i, True)
+            if optimal_move is None:
+                break
+            else:
+                self.propose_move(optimal_move)
+
+            i += 1
+
+    def board_filled_in(self, game_state: GameState) -> bool:
+        for i in range(game_state.board.N):
+            for j in range(game_state.board.N):
+                if game_state.board.get(i, j) == game_state.board.empty:
+                    return False
+        return True
+
+    def minimax(self, game_state: GameState, depth: int, maximizing_player: bool):
+        if depth == 0 or self.board_filled_in(game_state):
+            if maximizing_player:
+                return self.evaluate(game_state), None
+            else:
+                return -self.evaluate(game_state), None
+
+        if maximizing_player:
             value = -100000
-            best_move = possible_moves[0]
-            for move in possible_moves:
+            best_move = None
+            for move in self.compute_all_legal_moves(game_state):
                 new_game_state = self.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth-1, 0)
+                new_value, new_move = self.minimax(new_game_state, depth-1, False)
                 if (new_value > value):
                     best_move = move
-                value = new_value
+                    value = new_value
             return value, best_move
-        if maximizing_player == 0: 
-            possible_moves = self.compute_all_legal_moves(game_state)
-            if len(possible_moves) == 0:
-                return 0, 0
+
+        else:
             value = 1000000
-            best_move = possible_moves[0]
-            for move in possible_moves:
+            best_move = None
+            for move in self.compute_all_legal_moves(game_state):
                 new_game_state = self.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth-1, 1)
+                new_value, new_move = self.minimax(new_game_state, depth-1, True)
                 if (new_value < value):
                     best_move = move
-                value = new_value
+                    value = new_value
             return value, best_move
 
     def simulate_move(self, game_state: GameState, move: Move) -> GameState:
@@ -217,19 +215,5 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         return future_state
 
     
-    def evaluate(self, game_state: GameState, maximizing_player: int) -> int:
-        """
-        Evaluates the gamestate by comparing the scores of the two players. 
-        @param game_state: The GameState to evaluate.
-        @param maximizing_player: To check if the player is the maximizing player
-        @return: A value that represents the evaluation of the given gamestate.
-
-        """
-        value = 0
-        player = len(game_state.moves) % 2 + 1
-        if game_state.scores[player-1] > game_state.scores[abs(player-2)] and maximizing_player == 1:
-            value += 10
-        if game_state.scores[abs(player-2)] > game_state.scores[player-1] and maximizing_player == 0:
-            value -= 10
-        
-        return value
+    def evaluate(self, game_state: GameState):
+        return game_state.scores[0] - game_state.scores[1]
