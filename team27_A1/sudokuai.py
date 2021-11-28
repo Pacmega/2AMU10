@@ -123,42 +123,45 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         minimax_depth = 1
 
         while True:
-            move = self.minimax(game_state, minimax_depth, 1)[1]
-            value = self.minimax(game_state, minimax_depth, 1)[0]
+            value, move = self.minimax(game_state, minimax_depth, 1)
             self.propose_move(move)
             minimax_depth += 1
 
     def minimax(self, game_state: GameState, depth: int, maximizing_player: int):
-        future_state = deepcopy(game_state)
-        player = len(future_state.moves) % 2 + 1
         if depth == 1 or game_state.board.empty:
-            return game_state.scores[player], None
+            #it did not let me return None, it says None has no index i
+            #i have no idea what to put here. i tried to make a move  
+            i = 0
+            j = 0
+            value = -1
+            move = Move(i, j, value)
+            return self.evaluate(game_state, maximizing_player), move
         if maximizing_player == 1:
             possible_moves = self.compute_all_legal_moves(game_state)
+            if len(possible_moves) == 0:
+                return 0, 0
+            value = -100000
+            best_move = possible_moves[0]
             for move in possible_moves:
                 new_game_state = self.simulate_move(game_state, move)
-                new_move = self.minimax(new_game_state, depth-1, 0)
-                new_score = new_game_state.scores[player]
-                old_score = game_state.scores[player]
-                #not sure if this is correct
-                if (new_score > old_score):
+                new_value, new_move = self.minimax(new_game_state, depth-1, 0)
+                if (new_value > value):
                     best_move = move
-                else:
-                    best_move = new_move
-            return best_move
+                value = new_value
+            return value, best_move
         if maximizing_player == 0: 
             possible_moves = self.compute_all_legal_moves(game_state)
+            if len(possible_moves) == 0:
+                return 0, 0
+            value = 1000000
+            best_move = possible_moves[0]
             for move in possible_moves:
                 new_game_state = self.simulate_move(game_state, move)
-                new_move = self.minimax(new_game_state, depth-1, 1)
-                new_score = new_game_state.scores[player]
-                old_score = game_state.scores[player]
-                #not sure if this is correct
-                if (new_score < old_score):
+                new_value, new_move = self.minimax(new_game_state, depth-1, 1)
+                if (new_value < value):
                     best_move = move
-                else:
-                    best_move = new_move
-            return best_move
+                value = new_value
+            return value, best_move
 
     def simulate_move(self, game_state: GameState, move: Move) -> GameState:
         """
@@ -212,3 +215,21 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             future_state.scores[1] += score
 
         return future_state
+
+    
+    def evaluate(self, gamestate: GameState, maximizing_player: int) -> int:
+        """
+        Evaluates the gamestate by comparing the scores of the two players. 
+        @param game_state: The GameState to evaluate.
+        @param maximizing_player: To check if the player is the maximizing player
+        @return: A value that represents the evaluation of the given gamestate.
+
+        """
+        value = 0
+        player = len(gamestate.moves) % 2 + 1
+        if gamestate.scores[player-1] > gamestate.scores[abs(player-2)] and maximizing_player == 1:
+            value += 10
+        if gamestate.scores[abs(player-2)] > gamestate.scores[player-1] and maximizing_player == 0:
+            value -= 10
+        
+        return value
