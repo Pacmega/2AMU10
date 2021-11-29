@@ -115,12 +115,15 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         i = 1
         while True:
             if self.board_filled_in(game_state):
+                print("first break")
                 break
 
             value, optimal_move = self.minimax(game_state, i, True)
             if optimal_move is None:
+                print("second break")
                 break
             else:
+                print(value, optimal_move)
                 self.propose_move(optimal_move)
 
             i += 1
@@ -134,10 +137,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     def minimax(self, game_state: GameState, depth: int, maximizing_player: bool):
         if depth == 0 or self.board_filled_in(game_state):
-            if maximizing_player:
-                return self.evaluate(game_state), None
-            else:
-                return -self.evaluate(game_state), None
+            return self.evaluate(game_state), None
 
         if maximizing_player:
             value = -100000
