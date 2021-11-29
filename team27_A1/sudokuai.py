@@ -119,15 +119,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         while True:
             if self.board_filled_in(game_state):
-                print("first break")
                 break
 
             value, optimal_move = self.minimax(game_state, i, not bool(len(game_state.moves) % 2))
             if optimal_move is None:
-                print("second break")
                 break
             else:
-                print(value, optimal_move)
                 self.propose_move(optimal_move)
 
             i += 1
