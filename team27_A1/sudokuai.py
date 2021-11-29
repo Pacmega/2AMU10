@@ -117,7 +117,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             if self.board_filled_in(game_state):
                 break
 
-            value, optimal_move = self.minimax(game_state, i, True)
+            value, optimal_move = self.minimax(game_state, i, not bool(len(game_state.moves) % 2))
             if optimal_move is None:
                 break
             else:
