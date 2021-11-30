@@ -113,6 +113,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     def compute_best_move(self, game_state: GameState) -> None:
         i = 1
+
+        # Suggest a random legal move at first to make sure we always have something
+        self.propose_move(random.choice(self.compute_all_legal_moves(game_state)))
+
         while True:
             if self.board_filled_in(game_state):
                 break
