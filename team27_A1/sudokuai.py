@@ -12,15 +12,25 @@ from copy import deepcopy
 
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     """
-    Sudoku AI that computes a move for a given sudoku configuration.
+    Sudoku AI that computes a move for a given sudoku configuration. This particular
+    implementation is the agent of group 27 for Foundations of AI.
     """
 
     def __init__(self):
+        """
+        Create a new SudokuAI agent, using nothing particular that was not
+        already present in the original implementation this agent inherits
+        its basic capabilities from.
+        """
         super().__init__()
 
     def compute_all_legal_moves(self, game_state: GameState) -> List[Move]:
         """
-        Computes all the possible moves in the game state, minus the taboo moves specified by the GameState
+        Computes all the possible moves in the game state,
+        minus the taboo moves specified by the GameState.
+        @param game_state: The GameState to compute all legal moves for.
+        @return: A list of Moves, with each individual move being a legal one for
+            the given GameState
         """
 
         # First get all allowed numbers for each of the rows and columns
@@ -39,14 +49,14 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         for block_index in all_block_indices:
             blocks[block_index] = self.allowed_numbers_in_block(game_state, block_index[0], block_index[1])
 
-        # Consequently, loop over each of the empty squares;
-        # take the intersection of allowed moves for the row, column and block
+        # Consequently, loop over each of the empty squares and take the
+        # intersection of allowed moves for the row, column and block for that square
         allowed_moves = {}
         for i in range(game_state.board.N):
             for j in range(game_state.board.N):
                 if game_state.board.get(i, j) == game_state.board.empty:
-                    allowed_moves[(i, j)] = rows[i]\
-                        .intersection(columns[j])\
+                    allowed_moves[(i, j)] = rows[i] \
+                        .intersection(columns[j]) \
                         .intersection(blocks[(i - (i % game_state.board.m), j - (j % game_state.board.n))])
 
         all_empty_squares = allowed_moves.keys()
@@ -69,40 +79,73 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     def allowed_numbers_in_block(self, game_state: GameState, row: int, column: int) -> Set[int]:
         """
-        Calculates the allowed numbers to be placed in the block, given the game state and any row and column.
-        Does not check whether row and column are in the board parameters.
+        Finds the numbers that are still allowed to be placed in the block that
+        cell [row,column] is in on the board in the given GameState.
+        @param game_state: The GameState containing the board that cell [row,int]
+            should be checked on.
+        @param row: An integer describing the row that the cell [row,column] is in.
+        @param column: An integer describing the column that the cell [row,column] is in.
+        @return: A set containing all numbers that are not yet present in the block.
         """
         numbers_in_block = set(())
-        for i in range(row - (row % game_state.board.m), row + (game_state.board.m - (row % game_state.board.m))):
-            for j in range(column - (column % game_state.board.n),
-                           column + (game_state.board.n - (column % game_state.board.n))):
+
+        # Determine the exact start and end of the block that this cell
+        #   is in with the help of the available board size parameters
+        # Note that there is no requirement for square blocks in this sudoku
+        block_start_row = row - (row % game_state.board.m)
+        block_end_row = row + (game_state.board.m - (row % game_state.board.m))
+        block_start_column = column - (column % game_state.board.n)
+        block_end_column = column + (game_state.board.n - (column % game_state.board.n))
+
+        # Iterate over all cells in the block, and add their values to the set
+        # Note that these values are necessarily distinct by the rules of sudoku
+        for i in range(block_start_row, block_end_row):
+            for j in range(block_start_column, block_end_column):
                 value = game_state.board.get(i, j)
                 if value is not game_state.board.empty:
                     numbers_in_block.add(value)
 
+        # Finally take all possible numbers, and strike from those the
+        #   ones that already appear. This gives all remaining numbers.
         all_numbers = set((range(1, game_state.board.N + 1)))
         return all_numbers.difference(numbers_in_block)
 
     def allowed_numbers_in_row(self, game_state: GameState, row: int) -> Set[int]:
         """
-        Calculates the allowed numbers to be placed in the row, given the game state and any row index.
-        Does not check whether row is in the board parameters.
+        Finds the numbers that are still allowed to be placed in
+        the given row on the board in the given GameState.
+        @param game_state: The GameState containing the board that this row
+            should be checked on.
+        @param row: An integer describing the row to check.
+        @return: A set containing all numbers that are not yet present in the row.
         """
         numbers_in_row = set(())
+
+        # Iterate over all cells in the given row, and add their values to the set
+        # Note that these values are necessarily distinct by the rules of sudoku
         for column in range(game_state.board.N):
             value = game_state.board.get(row, column)
             if value is not game_state.board.empty:
                 numbers_in_row.add(value)
 
+        # Finally take all possible numbers, and strike from those the
+        #   ones that already appear. This gives all remaining numbers.
         all_numbers = set((range(1, game_state.board.N + 1)))
         return all_numbers.difference(numbers_in_row)
 
     def allowed_numbers_in_column(self, game_state: GameState, column: int) -> Set[int]:
         """
-        Calculates the allowed numbers to be placed in the column, given the game state and any column index.
-        Does not check whether column is in the board parameters.
+        Finds the numbers that are still allowed to be placed in
+        the given column on the board in the given GameState.
+        @param game_state: The GameState containing the board that this column
+            should be checked on.
+        @param column: An integer describing the column to check.
+        @return: A set containing all numbers that are not yet present in the column.
         """
         numbers_in_column = set(())
+
+        # Iterate over all cells in the given column, and add their values to the set
+        # Note that these values are necessarily distinct by the rules of sudoku
         for row in range(game_state.board.N):
             value = game_state.board.get(row, column)
             if value is not game_state.board.empty:
@@ -112,17 +155,30 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         return all_numbers.difference(numbers_in_column)
 
     def compute_best_move(self, game_state: GameState) -> None:
+        """
+        Main agent function to call. This function iteratively explores the
+        possible moves and future states of the game via a minimax algorithm
+        including A-B pruning, and continues to search further for as long as
+        it is allowed. This function does not terminate in normal execution.
+        @param game_state: The current GameState that the next move should be
+            computed for.
+        @return: Nothing. (function should not terminate in normal execution)
+        """
         i = 1
 
         # Suggest a random legal move at first to make sure we always have something
         self.propose_move(random.choice(self.compute_all_legal_moves(game_state)))
 
         while True:
-
             if self.board_filled_in(game_state):
                 break
+                
+            # Which player we are can be deduced from the number of previous
+            #   moves, and from that we can tell whether we want to maximize
+            #   or minimize our evaluation function (score P1 - score P2)
+            maximizing_player = not bool(len(game_state.moves) % 2)
 
-            value, optimal_move = self.minimax(game_state, i, not bool(len(game_state.moves) % 2), -100000, 100000)
+            value, optimal_move = self.minimax(game_state, i, maximizing_player, -100000, 100000)
             if optimal_move is None:
                 break
             else:
@@ -130,6 +186,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             i += 1
 
     def board_filled_in(self, game_state: GameState) -> bool:
+      """Helper function to check if there are any empty cells on the board."""
         for i in range(game_state.board.N):
             for j in range(game_state.board.N):
                 if game_state.board.get(i, j) == game_state.board.empty:
@@ -188,16 +245,22 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         score = 0
         regions_completed = 0
 
+        # The player we are simulating for, either P1 or P2, can be deduced
+        #   from the length of the move history (player 1 always goes first)
+
+        simulating_for = len(game_state.moves) % 2
+
+        # We create a deep copy of the given game_state, so that we are sure
+        #   that we do not unintentionally modify the true game state.
         future_state = deepcopy(game_state)
-        simulating_for = len(future_state.moves) % 2 + 1
         future_state.board.put(move.i, move.j, move.value)
         future_state.moves.append(move)
 
         # Play the passed move on the board and see how many points
-        #   would be earned.
-        # For now, this just returns the amount of points this particular move
-        #   would produce for the playing that plays it
-
+        #   would be earned. The amount of points scored for a move
+        #   depends on the amount of regions completed with that move.
+        #   At most, a move could simultaneously complete a row,
+        #   a column and a block, giving 7 points at once.
         block_values_left = len(self.allowed_numbers_in_block(future_state,
                                                               move.i,
                                                               move.j))
@@ -220,13 +283,17 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         elif regions_completed == 3:
             score = 7
 
-        if simulating_for == 1:
+        if simulating_for == 0:
             future_state.scores[0] += score
         else:
             future_state.scores[1] += score
 
         return future_state
 
-    
     def evaluate(self, game_state: GameState):
+        """
+        Calculate the heuristic that is used by the minimax algorithm
+        to see which moves and options are good for either player.
+        Calculation used: Player 1's score - Player 2's score
+        """
         return game_state.scores[0] - game_state.scores[1]
