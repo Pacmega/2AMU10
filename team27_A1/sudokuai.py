@@ -118,15 +118,15 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         self.propose_move(random.choice(self.compute_all_legal_moves(game_state)))
 
         while True:
+
             if self.board_filled_in(game_state):
                 break
 
-            value, optimal_move = self.minimax(game_state, i, not bool(len(game_state.moves) % 2))
+            value, optimal_move = self.minimax(game_state, i, not bool(len(game_state.moves) % 2), -100000, 100000)
             if optimal_move is None:
                 break
             else:
                 self.propose_move(optimal_move)
-
             i += 1
 
     def board_filled_in(self, game_state: GameState) -> bool:
@@ -136,7 +136,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                     return False
         return True
 
-    def minimax(self, game_state: GameState, depth: int, maximizing_player: bool):
+    def minimax(self, game_state: GameState, depth: int, maximizing_player: bool, alpha: int, beta: int):
         if depth == 0 or self.board_filled_in(game_state):
             return self.evaluate(game_state), None
 
@@ -145,10 +145,16 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             best_move = None
             for move in self.compute_all_legal_moves(game_state):
                 new_game_state = self.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth-1, False)
-                if (new_value > value):
+                new_value, new_move = self.minimax(new_game_state, depth-1, False, alpha, beta)
+
+                if new_value > value:
                     best_move = move
                     value = new_value
+
+                if value >= beta:
+                    break
+
+                alpha = max(alpha, value)
             return value, best_move
 
         else:
@@ -156,10 +162,16 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             best_move = None
             for move in self.compute_all_legal_moves(game_state):
                 new_game_state = self.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth-1, True)
-                if (new_value < value):
+                new_value, new_move = self.minimax(new_game_state, depth-1, True, alpha, beta)
+
+                if new_value < value:
                     best_move = move
                     value = new_value
+
+                if value <= alpha:
+                    break
+
+                beta = max(beta, value)
             return value, best_move
 
     def simulate_move(self, game_state: GameState, move: Move) -> GameState:
