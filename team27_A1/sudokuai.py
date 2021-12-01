@@ -1,7 +1,3 @@
-#  (C) Copyright Wieger Wesselink 2021. Distributed under the GPL-3.0-or-later
-#  Software License, (See accompanying file LICENSE or copy at
-#  https://www.gnu.org/licenses/gpl-3.0.txt)
-
 import random
 from typing import Set, List
 
@@ -13,7 +9,8 @@ from copy import deepcopy
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     """
     Sudoku AI that computes a move for a given sudoku configuration. This particular
-    implementation is the agent of group 27 for Foundations of AI.
+    implementation is the agent of group 27 for Foundations of AI which employs a minimax algorithm with the extension
+    of alpha-beta pruning.
     """
 
     def __init__(self):
@@ -28,12 +25,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Computes all the possible moves in the game state,
         minus the taboo moves specified by the GameState.
-        @param game_state: The GameState to compute all legal moves for.
-        @return: A list of Moves, with each individual move being a legal one for
-            the given GameState
+        @param game_state   The GameState to compute all legal moves for.
+        @return:            A list of Moves, with each individual move being a legal one for
+                                the given GameState
         """
 
-        # First get all allowed numbers for each of the rows and columns
+        # First, get all allowed numbers for each of the rows and columns
         rows = {}
         columns = {}
         for i in range(game_state.board.N):
@@ -81,11 +78,11 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Finds the numbers that are still allowed to be placed in the block that
         cell [row,column] is in on the board in the given GameState.
-        @param game_state: The GameState containing the board that cell [row,int]
-            should be checked on.
-        @param row: An integer describing the row that the cell [row,column] is in.
-        @param column: An integer describing the column that the cell [row,column] is in.
-        @return: A set containing all numbers that are not yet present in the block.
+        @param game_state   The GameState containing the board that cell [row,int]
+                                should be checked on.
+        @param row          An integer describing the row that the cell [row,column] is in.
+        @param column       An integer describing the column that the cell [row,column] is in.
+        @return:            A set containing all numbers that are not yet present in the block.
         """
         numbers_in_block = set(())
 
@@ -114,10 +111,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Finds the numbers that are still allowed to be placed in
         the given row on the board in the given GameState.
-        @param game_state: The GameState containing the board that this row
-            should be checked on.
-        @param row: An integer describing the row to check.
-        @return: A set containing all numbers that are not yet present in the row.
+        @param game_state   The GameState containing the board that this row
+                                should be checked on.
+        @param row          An integer describing the row to check.
+        @return             A set containing all numbers that are not yet present in the row.
         """
         numbers_in_row = set(())
 
@@ -137,10 +134,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Finds the numbers that are still allowed to be placed in
         the given column on the board in the given GameState.
-        @param game_state: The GameState containing the board that this column
-            should be checked on.
-        @param column: An integer describing the column to check.
-        @return: A set containing all numbers that are not yet present in the column.
+        @param game_state   The GameState containing the board that this column
+                                should be checked on.
+        @param column       An integer describing the column to check.
+        @return             A set containing all numbers that are not yet present in the column.
         """
         numbers_in_column = set(())
 
@@ -160,9 +157,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         possible moves and future states of the game via a minimax algorithm
         including A-B pruning, and continues to search further for as long as
         it is allowed. This function does not terminate in normal execution.
-        @param game_state: The current GameState that the next move should be
-            computed for.
-        @return: Nothing. (function should not terminate in normal execution)
+        @param game_state   The current GameState that the next move should be
+                                computed for.
+        @return             Nothing. (function should not terminate in normal execution)
         """
         i = 1
 
@@ -186,7 +183,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             i += 1
 
     def board_filled_in(self, game_state: GameState) -> bool:
-        """Helper function to check if there are any empty cells on the board."""
+        """
+        Helper function to check if there are any empty cells on the board.
+        """
         for i in range(game_state.board.N):
             for j in range(game_state.board.N):
                 if game_state.board.get(i, j) == game_state.board.empty:
@@ -199,13 +198,14 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         also using Alpha-Beta pruning in order to stops evaluating a move sooner
         when at least one possibility has been found that proves the move to be
         worse than a previously examined move.
-        @param game_state: The current GameState that the next move should be computed for.
-        @param depth: The maximum amount of levels that the game tree should be explored up to.
-        @param maximizing_player: Boolean specifying whether the current player being evaluated is
-            the one that wants to maximize the evaluation heuristic (Player 1).
-        @param alpha: The minimum score that the maximizing player is assured of
-        @param beta: The maximum score that the minimizing player is assured of
-        @return: A tuple specifying the value of this move for this player, and the corresponding move.
+        @param game_state           The current GameState that the next move should be computed for.
+        @param depth                The maximum amount of levels that the game tree should be explored up to.
+        @param maximizing_player    Boolean specifying whether the current player being evaluated is
+                                        the one that wants to maximize the evaluation heuristic (Player 1).
+        @param alpha                The minimum score that the maximizing player is assured of
+        @param beta                 The maximum score that the minimizing player is assured of
+        @return                     A tuple specifying the value of this move for this player, and the corresponding
+                                        move.
         """
         if depth == 0 or self.board_filled_in(game_state):
             return self.evaluate(game_state), None
@@ -254,10 +254,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         does not check whether a move might be taboo, and instead just executes it.
         The function internally deduces from the length of game_state.moves
         for which player the given move should be played.
-        @param game_state: The GameState to execute/simulate the given move on.
-        @param move: The move to execute/simulate on the given GameState.
-        @return: The new GameState after this move is performed.
-                   Scores, moves and board are updated.
+        @param game_state   The GameState to execute/simulate the given move on.
+        @param move         The move to execute/simulate on the given GameState.
+        @return             The new GameState after this move is performed.
+                                Scores, moves and board are updated.
         """
         score = 0
         regions_completed = 0
