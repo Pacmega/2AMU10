@@ -1,5 +1,7 @@
+import numpy as np
+
 from copy import deepcopy
-from typing import List, Set
+from typing import List, Set, Dict
 
 from competitive_sudoku.sudoku import GameState, Move
 
@@ -20,7 +22,7 @@ def board_filled_in(game_state: GameState) -> bool:
     return True
 
 
-def compute_all_legal_moves(game_state: GameState) -> List[Move]:
+def compute_all_legal_moves(game_state: GameState) -> Dict[(int, int), List[int]]:
     """
     Computes all the possible moves in the game state,
     minus the taboo moves specified by the GameState.
@@ -64,14 +66,7 @@ def compute_all_legal_moves(game_state: GameState) -> List[Move]:
             if taboo_move.value in square_moves:
                 allowed_moves.get((taboo_move.i, taboo_move.j)).remove(taboo_move.value)
 
-    # Write everything to a list
-    moves_list = []
-    for square in all_empty_squares:
-        moves = allowed_moves[square]
-        for move in moves:
-            moves_list.append(Move(square[0], square[1], move))
-
-    return moves_list
+    return allowed_moves
 
 
 def allowed_numbers_in_block(game_state: GameState, row: int, column: int) -> Set[int]:

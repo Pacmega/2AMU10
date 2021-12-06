@@ -1,4 +1,5 @@
 import random
+from typing import List, Dict
 
 from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
@@ -50,6 +51,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 break
             else:
                 self.propose_move(optimal_move)
+
+            if i < 10:
+                print("Completed depth: " + str(i))
             i += 1
 
     def minimax(self, game_state: GameState, depth: int, maximizing_player: bool, alpha: int, beta: int) -> (int, Move):
@@ -73,7 +77,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         if maximizing_player:
             value = -100000
             best_move = None
-            for move in game_helpers.compute_all_legal_moves(game_state):
+            for move in self.get_valuable_moves(game_state):
                 # Simulate a possible move, and recursively call minimax again
                 #   to explore further down the tree how this move plays out.
                 new_game_state = game_helpers.simulate_move(game_state, move)
@@ -107,6 +111,19 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
                 beta = max(beta, value)
             return value, best_move
+
+    def get_valuable_moves(self, game_state: GameState) -> List[Move]:
+        # Get all legal moves, a dictionary that has coordinates as keys, and a list of ints as values.
+        all_legal_moves: Dict[(int, int): List[int]] = game_helpers.compute_all_legal_moves(game_state)
+
+        # Write everything to a list
+        moves_list = []
+        for square in all_legal_moves.keys():
+            moves: List[int] = all_legal_moves[square]
+            for move in moves:
+                moves_list.append(Move(square[0], square[1], move))
+
+        return moves_list
 
     def evaluate(self, game_state: GameState):
         """
