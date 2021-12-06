@@ -3,6 +3,11 @@ from typing import List, Set
 
 from competitive_sudoku.sudoku import GameState, Move
 
+"""
+This file contains functions that extend the functionality of the GameState class, such as calculating 
+acceptable moves, checking whether the board still contains an empty square, or simulating a move on a GameState object.
+"""
+
 
 def board_filled_in(game_state: GameState) -> bool:
     """

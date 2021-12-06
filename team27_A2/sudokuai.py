@@ -1,9 +1,7 @@
 import random
-from typing import Set, List
 
 from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
-from copy import deepcopy
 
 from team27_A2.helpers import game_helpers
 
