@@ -34,8 +34,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         i = 1
 
+        # TODO decide what to do with this
         # Suggest a random legal move at first to make sure we always have something
-        self.propose_move(random.choice(game_helpers.compute_all_legal_moves(game_state)))
+        # self.propose_move(random.choice(self.compute_all_legal_moves(game_state)))
 
         while True:
             if game_helpers.board_filled_in(game_state):
@@ -123,8 +124,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         @return:            A list of valuable moves.
         """
 
-        # Get all legal moves, a dictionary that has coordinates as keys, and a list of ints as values.
-        all_legal_moves: Dict[(int, int): List[int]] = game_helpers.compute_all_legal_moves(game_state)
+        # Get all legal moves, and allowed moves in each row, column and block. Check the compute_all_legal_moves
+        # function for type specifications.
+        (all_legal_moves, rows, columns, blocks) = game_helpers.compute_all_legal_moves(game_state)
 
         # Add calls to heuristics!!
 

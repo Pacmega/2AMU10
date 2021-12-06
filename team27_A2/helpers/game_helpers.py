@@ -1,7 +1,5 @@
-import numpy as np
-
 from copy import deepcopy
-from typing import List, Set, Dict
+from typing import List, Set, Dict, Tuple
 
 from competitive_sudoku.sudoku import GameState, Move
 
@@ -22,21 +20,27 @@ def board_filled_in(game_state: GameState) -> bool:
     return True
 
 
-def compute_all_legal_moves(game_state: GameState) -> Dict[(int, int), List[int]]:
+def compute_all_legal_moves(game_state: GameState) \
+        -> (Dict[Tuple[int, int], List[int]], List[Set[int]], List[Set[int]], Dict[Tuple[int, int], List[int]]):
     """
     Computes all the possible moves in the game state,
     minus the taboo moves specified by the GameState.
     @param game_state:  The GameState to compute all legal moves for.
-    @return:            A dictionary with coordinates as keys, and lists of legal values for the respective square as
-                            values.
+    @return:            A tuple with 4 values:
+                            (1) A dictionary with coordinates as keys, and lists of legal values for the respective
+                                square as values.
+                            (2) A list (size N) of sets, representing the allowed numbers in each row/
+                            (3) A list (size N) of sets, representing the allowed numbers in each column
+                            (4) A dictionary of coordinates as keys (top left square of a block),
+                                with a set of the allowed numbers in the respective block as the value.
     """
 
     # First, get all allowed numbers for each of the rows and columns
-    rows = {}
-    columns = {}
+    rows = []
+    columns = []
     for i in range(game_state.board.N):
-        rows[i] = allowed_numbers_in_row(game_state, i)
-        columns[i] = allowed_numbers_in_column(game_state, i)
+        rows.append(allowed_numbers_in_row(game_state, i))
+        columns.append(allowed_numbers_in_column(game_state, i))
 
     # Next, get all allowed numbers for each of the blocks
     all_block_indices = [(i, j)
@@ -53,9 +57,10 @@ def compute_all_legal_moves(game_state: GameState) -> Dict[(int, int), List[int]
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):
             if game_state.board.get(i, j) == game_state.board.empty:
-                allowed_moves[(i, j)] = rows[i] \
-                    .intersection(columns[j]) \
-                    .intersection(blocks[(i - (i % game_state.board.m), j - (j % game_state.board.n))])
+                allowed_moves[(i, j)] = list(
+                    rows[i].intersection(columns[j])
+                        .intersection(blocks[(i - (i % game_state.board.m), j - (j % game_state.board.n))])
+                )
 
     all_empty_squares = allowed_moves.keys()
 
@@ -66,7 +71,7 @@ def compute_all_legal_moves(game_state: GameState) -> Dict[(int, int), List[int]
             if taboo_move.value in square_moves:
                 allowed_moves.get((taboo_move.i, taboo_move.j)).remove(taboo_move.value)
 
-    return allowed_moves
+    return allowed_moves, rows, columns, blocks
 
 
 def allowed_numbers_in_block(game_state: GameState, row: int, column: int) -> Set[int]:
