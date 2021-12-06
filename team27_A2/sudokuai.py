@@ -96,7 +96,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         else:
             value = 1000000
             best_move = None
-            for move in game_helpers.compute_all_legal_moves(game_state):
+            for move in self.get_valuable_moves(game_state):
                 # Simulate a possible move, and recursively call minimax again
                 #   to explore further down the tree how this move plays out.
                 new_game_state = game_helpers.simulate_move(game_state, move)
