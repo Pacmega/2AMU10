@@ -113,8 +113,20 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             return value, best_move
 
     def get_valuable_moves(self, game_state: GameState) -> List[Move]:
+        """
+        This function computes all valuable moves, according to a set of heuristics, which are then to be explored by
+        the minimax algorithm.
+        First, it computes all legal moves (so already excluding taboo moves).
+        Then, it reduces this set of legal moves through several heuristics.
+        Lastly, it writes everything to a list of moves, which it then returns.
+        @param game_state:  The game state for which the valuable moves have to be computed.
+        @return:            A list of valuable moves.
+        """
+
         # Get all legal moves, a dictionary that has coordinates as keys, and a list of ints as values.
         all_legal_moves: Dict[(int, int): List[int]] = game_helpers.compute_all_legal_moves(game_state)
+
+        # Add calls to heuristics!!
 
         # Write everything to a list
         moves_list = []
