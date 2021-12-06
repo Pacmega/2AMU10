@@ -27,8 +27,8 @@ def compute_all_legal_moves(game_state: GameState) -> Dict[(int, int), List[int]
     Computes all the possible moves in the game state,
     minus the taboo moves specified by the GameState.
     @param game_state:  The GameState to compute all legal moves for.
-    @return:            A list of Moves, with each individual move being a legal one for
-                            the given GameState
+    @return:            A dictionary with coordinates as keys, and lists of legal values for the respective square as
+                            values.
     """
 
     # First, get all allowed numbers for each of the rows and columns
