@@ -4,7 +4,7 @@ from typing import List, Dict
 from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
 
-from team27_A2.helpers import game_helpers
+from team27_A2.helpers import game_helpers, heuristics
 
 
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
@@ -33,12 +33,13 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         @return:            Nothing. (function should not terminate in normal execution)
         """
         i = 1
+        max_depth = 20
 
         # TODO decide what to do with this
         # Suggest a random legal move at first to make sure we always have something
         # self.propose_move(random.choice(self.compute_all_legal_moves(game_state)))
 
-        while True:
+        while i < max_depth:
             if game_helpers.board_filled_in(game_state):
                 break
 
@@ -53,8 +54,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             else:
                 self.propose_move(optimal_move)
 
-            if i < 10:
-                print("Completed depth: " + str(i))
+            print("Completed depth: " + str(i))
+
             i += 1
 
     def minimax(self, game_state: GameState, depth: int, maximizing_player: bool, alpha: int, beta: int) -> (int, Move):
@@ -126,14 +127,23 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         # Get all legal moves, and allowed moves in each row, column and block. Check the compute_all_legal_moves
         # function for type specifications.
-        (all_legal_moves, rows, columns, blocks) = game_helpers.compute_all_legal_moves(game_state)
+        (legal_moves, rows, columns, blocks) = game_helpers.compute_all_legal_moves(game_state)
 
+        ###
+        # Add calls to remove unknown taboo_moves
+        ###
+
+        ###
         # Add calls to heuristics!!
+        ###
+
+        # remove squares that have more than x options left
+        legal_moves = heuristics.remove_squares_with_many_options(legal_moves, 3)
 
         # Write everything to a list
         moves_list = []
-        for square in all_legal_moves.keys():
-            moves: List[int] = all_legal_moves[square]
+        for square in legal_moves.keys():
+            moves: List[int] = legal_moves[square]
             for move in moves:
                 moves_list.append(Move(square[0], square[1], move))
 
