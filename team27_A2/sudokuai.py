@@ -4,7 +4,7 @@ from typing import List, Dict
 from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
 
-from team27_A2.helpers import game_helpers, heuristics
+from team27_A2.helpers import game_helpers, heuristics, taboo_move_calculation
 
 
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
@@ -132,6 +132,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         ###
         # Add calls to remove unknown taboo_moves
         ###
+        legal_moves = taboo_move_calculation.locked_candidates_rows(game_state, legal_moves, rows, blocks)
 
         ###
         # Add calls to heuristics!!
