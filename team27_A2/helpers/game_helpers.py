@@ -19,7 +19,6 @@ def board_filled_in(game_state: GameState) -> bool:
                 return False
     return True
 
-
 def compute_all_legal_moves(game_state: GameState) \
         -> (Dict[Tuple[int, int], List[int]], List[Set[int]], List[Set[int]], Dict[Tuple[int, int], List[int]]):
     """
@@ -59,7 +58,8 @@ def compute_all_legal_moves(game_state: GameState) \
             if game_state.board.get(i, j) == game_state.board.empty:
                 allowed_moves[(i, j)] = list(
                     rows[i].intersection(columns[j])
-                        .intersection(blocks[(i - (i % game_state.board.m), j - (j % game_state.board.n))])
+                        .intersection(blocks[get_block_top_left_coordinates(i, j,
+                                                                            game_state.board.m, game_state.board.n)])
                 )
 
     all_empty_squares = allowed_moves.keys()
@@ -212,3 +212,7 @@ def simulate_move(game_state: GameState, move: Move) -> GameState:
         future_state.scores[1] += score
 
     return future_state
+
+
+def get_block_top_left_coordinates(row_index: int, column_index: int, m: int, n: int) -> Tuple[int, int]:
+    return row_index - (row_index % m), column_index - (column_index % n)
