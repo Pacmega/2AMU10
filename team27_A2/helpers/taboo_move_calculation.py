@@ -2,6 +2,8 @@ from typing import Dict, Tuple, List, Set
 
 from competitive_sudoku.sudoku import GameState
 
+from . import get_block_top_left_coordinates
+
 
 def locked_candidates_rows(game_state: GameState,
                            legal_moves: Dict[Tuple[int, int], List[int]],
@@ -91,7 +93,7 @@ def locked_candidates_columns(game_state: GameState,
             newly_occupied_blocks = []
             newly_occupied_columns = []
             for i in range(0, game_state.board.N, columns_per_block):
-                if number in allowed_in_blocks[(i, j)]:
+                if (i, j) in allowed_in_blocks and number in allowed_in_blocks[(i, j)]:
                     columns_allowing_number = []
 
                     for col_index in range(j, j + columns_per_block):
@@ -107,7 +109,8 @@ def locked_candidates_columns(game_state: GameState,
             if len(newly_occupied_columns) > 0:
                 blocks_to_check = []
                 for i in range(0, game_state.board.N, columns_per_block):
-                    if (i, j) not in newly_occupied_blocks and number in allowed_in_blocks[(i, j)]:
+                    if (i, j) not in newly_occupied_blocks and (i, j) in allowed_in_blocks and \
+                            number in allowed_in_blocks[(i, j)]:
                         blocks_to_check.append((i, j))
 
                 columns_to_check = []
@@ -122,3 +125,46 @@ def locked_candidates_columns(game_state: GameState,
                                 legal_moves[(i, col)].remove(number)
 
         return legal_moves
+
+
+def clear_singles(game_state: GameState,
+                  legal_moves: Dict[Tuple[int, int], List[int]]):
+    for possible_single_cell in legal_moves:
+        if len(legal_moves[possible_single_cell]) == 1:
+            # This cell contains exactly a single possible value,
+            #   so clearly that value has to go here
+            single_row = possible_single_cell[0]
+            single_col = possible_single_cell[1]
+            single_value = legal_moves[possible_single_cell][0]
+
+            first_block_row, first_block_col = get_block_top_left_coordinates(
+                single_row, single_col, game_state.board.m, game_state.board.n)
+
+            for i in range(game_state.board.N):
+                # This doesn't crash, since Python immediately continues
+                #    if the first part of the if statement is False
+                if (i, single_col) in legal_moves and \
+                        single_value in legal_moves[(i, single_col)]:
+                    legal_moves[(i, single_col)].remove(single_value)
+
+                if (single_row, i) in legal_moves and \
+                        single_value in legal_moves[(single_row, i)]:
+                    legal_moves[(single_row, i)].remove(single_value)
+
+                block_cell_row = first_block_row + int(i / game_state.board.m)
+                block_cell_col = first_block_col + (i % game_state.board.n)
+
+                if (block_cell_row, block_cell_col) in legal_moves and \
+                        single_value in legal_moves[(block_cell_row, block_cell_col)]:
+                    legal_moves[(block_cell_row, block_cell_col)].remove(single_value)
+
+    return legal_moves
+
+
+def hidden_singles(game_state: GameState,
+                  legal_moves: Dict[Tuple[int, int], List[int]],
+            allowed_in_rows: List[Set[int]],
+            allowed_in_columns: List[Set[int]],
+            allowed_in_blocks: Dict[Tuple[int, int], List[int]]):
+    print('Hidden singles: not yet implemented :)')
+    return legal_moves

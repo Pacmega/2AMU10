@@ -132,6 +132,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         ###
         # Add calls to remove unknown taboo_moves
         ###
+        legal_moves = taboo_move_calculation.clear_singles(game_state, legal_moves)
         legal_moves = taboo_move_calculation.locked_candidates_rows(game_state, legal_moves, rows, blocks)
         legal_moves = taboo_move_calculation.locked_candidates_columns(game_state, legal_moves, columns, blocks)
 
