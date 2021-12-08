@@ -127,44 +127,118 @@ def locked_candidates_columns(game_state: GameState,
         return legal_moves
 
 
-def clear_singles(game_state: GameState,
+def obvious_singles(game_state: GameState,
                   legal_moves: Dict[Tuple[int, int], List[int]]):
+    # TODO: Needs manual checking to confirm correctness
     for possible_single_cell in legal_moves:
         if len(legal_moves[possible_single_cell]) == 1:
             # This cell contains exactly a single possible value,
             #   so clearly that value has to go here
             single_row = possible_single_cell[0]
-            single_col = possible_single_cell[1]
+            single_column = possible_single_cell[1]
             single_value = legal_moves[possible_single_cell][0]
 
-            first_block_row, first_block_col = get_block_top_left_coordinates(
-                single_row, single_col, game_state.board.m, game_state.board.n)
+            first_block_row, first_block_column = get_block_top_left_coordinates(
+                single_row, single_column, game_state.board.m, game_state.board.n)
 
             for i in range(game_state.board.N):
                 # This doesn't crash, since Python immediately continues
                 #    if the first part of the if statement is False
-                if (i, single_col) in legal_moves and \
-                        single_value in legal_moves[(i, single_col)]:
-                    legal_moves[(i, single_col)].remove(single_value)
+                if i != single_row and (i, single_column) in legal_moves and \
+                        single_value in legal_moves[(i, single_column)]:
+                    legal_moves[(i, single_column)].remove(single_value)
 
-                if (single_row, i) in legal_moves and \
+                if i != single_column and (single_row, i) in legal_moves and \
                         single_value in legal_moves[(single_row, i)]:
                     legal_moves[(single_row, i)].remove(single_value)
 
-                block_cell_row = first_block_row + int(i / game_state.board.m)
-                block_cell_col = first_block_col + (i % game_state.board.n)
+                block_cell_row = first_block_row + (i // game_state.board.m)
+                block_cell_column = first_block_column + (i % game_state.board.n)
 
-                if (block_cell_row, block_cell_col) in legal_moves and \
-                        single_value in legal_moves[(block_cell_row, block_cell_col)]:
-                    legal_moves[(block_cell_row, block_cell_col)].remove(single_value)
+                if not (block_cell_row == single_row and block_cell_column == single_column) and \
+                        (block_cell_row, block_cell_column) in legal_moves and \
+                        single_value in legal_moves[(block_cell_row, block_cell_column)]:
+                    legal_moves[(block_cell_row, block_cell_column)].remove(single_value)
 
     return legal_moves
 
 
-def hidden_singles(game_state: GameState,
-                  legal_moves: Dict[Tuple[int, int], List[int]],
-            allowed_in_rows: List[Set[int]],
-            allowed_in_columns: List[Set[int]],
-            allowed_in_blocks: Dict[Tuple[int, int], List[int]]):
-    print('Hidden singles: not yet implemented :)')
+def hidden_singles(game_state: GameState, legal_moves: Dict[Tuple[int, int], List[int]]):
+    # TODO: Needs manual checking to confirm correctness
+    # Create (initially empty) lists and a small matrix to store for every row/column/block (unit)
+    #   which values within that unit have already been determined to not possibly be singles
+    #   (== are legal in > 1 cell within that unit)
+    non_singles_row = [[] for i in range(game_state.board.N)]
+    non_singles_column = [[] for i in range(game_state.board.N)]
+    non_singles_block = [[[] for col_block in range(game_state.board.N // game_state.board.n)] \
+                             for row_block in range(game_state.board.N // game_state.board.m)]
+
+    for possible_single_cell in legal_moves:
+        cell_row = possible_single_cell[0]
+        cell_column = possible_single_cell[1]
+
+        cell_block_row = cell_row // game_state.board.m
+        cell_block_column = cell_column // game_state.board.n
+
+        first_block_row, first_block_column = get_block_top_left_coordinates(
+            cell_row, cell_column, game_state.board.m, game_state.board.n)
+
+        for possible_value in legal_moves[possible_single_cell]:
+            potential_single_in_row = True
+            potential_single_in_column = True
+            potential_single_in_block = True
+
+            if possible_value in non_singles_row[cell_row]:
+                potential_single_in_row = False
+
+            if possible_value in non_singles_column[cell_column]:
+                potential_single_in_column = False
+
+            if possible_value in non_singles_block[cell_block_row][cell_block_column]:
+                potential_single_in_block = False
+
+            if not potential_single_in_row and not potential_single_in_column and \
+                    not potential_single_in_block:
+                # It is already clear that we don't need to look further
+                continue
+
+            for i in range(game_state.board.N):
+                checking_block_cell_row = first_block_row + (i // game_state.board.n)
+                checking_block_cell_column = first_block_column + (i % game_state.board.n)
+
+                if not potential_single_in_row and not potential_single_in_column and \
+                        not potential_single_in_block:
+                    # In every possible way, this value is definitely not uniquely legal in this cell
+                    break
+
+                if potential_single_in_row and cell_column != i and \
+                        (cell_row, i) in legal_moves and possible_value in legal_moves[(cell_row, i)]:
+                    # Counterexample, this column has >= 2 places where this value is legal
+                    potential_single_in_row = False
+                    non_singles_row[cell_row].append(possible_value)
+
+                if potential_single_in_column and cell_row != i and \
+                        (i, cell_column) in legal_moves and possible_value in legal_moves[(i, cell_column)]:
+                    # Counterexample, this row has >= 2 places where this value is legal
+                    potential_single_in_column = False
+                    non_singles_column[cell_column].append(possible_value)
+
+                if potential_single_in_block and not (checking_block_cell_row == cell_row and \
+                        checking_block_cell_column == cell_column) and \
+                        (checking_block_cell_row, checking_block_cell_column) in legal_moves and \
+                        possible_value in legal_moves[(checking_block_cell_row, checking_block_cell_column)]:
+                    # Counterexample, this block has >= 2 places where this value is legal
+                    potential_single_in_block = False
+                    block_index_row = checking_block_cell_row // game_state.board.m
+                    block_index_column = checking_block_cell_column // game_state.board.n
+                    non_singles_block[block_index_row][block_index_column].append(possible_value)
+
+            # After checking all cells in the corresponding rows/columns/block,
+            #   if this value-cell combination is indeed unique to one of those three
+            #   this cell must contain this particular value. Replace the list of potential
+            #   values with a list carrying this one value. This works safely, despite us here
+            #   modifying the list we are currently iterating over.
+            if potential_single_in_row or potential_single_in_column or potential_single_in_block:
+                legal_moves[possible_single_cell] = [possible_value]
+
     return legal_moves
