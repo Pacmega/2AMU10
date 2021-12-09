@@ -22,11 +22,28 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         super().__init__()
 
     class Node:
+        """
+        The Node inner class stores a game state and its respective subtree. For the minimax, a root node is created
+        which is used throughout the iterative deepening process to minimize duplicate calculations.
+        """
+
         def __init__(self, game_state: GameState):
+            """
+            Creates a new Node, stores the given game state, and initializes an empty list of children.
+            """
             self.game_state = game_state
             self.children: List[SudokuAI.Node] = []
 
-        def extend_tree(self):
+        def extend_node(self):
+            """
+            This function expands the node with the valuable moves as calculated by the agent.
+            First, it gets the valuable moves from the agent.
+            Then, it loops over all determined valuable moves, simulates these moves, creates a new node with the new
+                game state and appends this new node to the list of children.
+            """
+            if len(self.children) > 0:
+                raise Exception("extend tree should not be called on an already extended node!")
+
             valuable_moves = SudokuAI.get_valuable_moves(self.game_state)
 
             for move in valuable_moves:
@@ -97,7 +114,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             # Check if the next layer of the tree is already present
             #   If not, expand the tree
             if len(node.children) == 0:
-                node.extend_tree()
+                node.extend_node()
 
             for child in node.children:
                 # For each of the children, run minimax again
@@ -120,7 +137,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             # Check if the next layer of the tree is already present
             #   If not, expand the tree
             if len(node.children) == 0:
-                node.extend_tree()
+                node.extend_node()
 
             for child in node.children:
                 # For each of the children, run minimax again
