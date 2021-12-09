@@ -143,6 +143,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         # Add calls to heuristics!!
         ###
 
+        legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
+
         # remove squares that have more than x options left
         # legal_moves = heuristics.remove_squares_with_many_options(legal_moves, 3)
         # print(legal_moves)
