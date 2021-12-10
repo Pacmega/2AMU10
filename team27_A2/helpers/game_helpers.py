@@ -28,7 +28,7 @@ def compute_all_legal_moves(game_state: GameState) \
     @return:            A tuple with 4 values:
                             (1) A dictionary with coordinates as keys, and lists of legal values for the respective
                                 square as values.
-                            (2) A list (size N) of sets, representing the allowed numbers in each row/
+                            (2) A list (size N) of sets, representing the allowed numbers in each row
                             (3) A list (size N) of sets, representing the allowed numbers in each column
                             (4) A dictionary of coordinates as keys (top left square of a block),
                                 with a set of the allowed numbers in the respective block as the value.

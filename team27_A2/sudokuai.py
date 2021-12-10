@@ -125,29 +125,28 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         @return:            A list of valuable moves.
         """
 
-        # Get all legal moves, and allowed moves in each row, column and block. Check the compute_all_legal_moves
-        # function for type specifications.
+        # Get all legal moves, and allowed moves in each row, column and block.
+        # Check the compute_all_legal_moves function for type specifications.
         (legal_moves, rows, columns, blocks) = game_helpers.compute_all_legal_moves(game_state)
 
         ###
-        # Add calls to remove unknown taboo_moves
+        # Use heuristics to discover legal moves that would be taboo
         ###
-        # legal_moves = taboo_move_calculation.obvious_singles(game_state, legal_moves)
-        # legal_moves = taboo_move_calculation.hidden_singles(game_state, legal_moves)
-        legal_moves = taboo_move_calculation.locked_candidates_rows(game_state, legal_moves, rows, blocks)
-        legal_moves = taboo_move_calculation.locked_candidates_columns(game_state, legal_moves, columns, blocks)
-        legal_moves = taboo_move_calculation.obvious_singles(game_state, legal_moves)
-        legal_moves = taboo_move_calculation.hidden_singles(game_state, legal_moves)
+        # TODO: Discover the best order of heuristic applications
+        taboo_move_calculation.obvious_singles(game_state, legal_moves)
+        taboo_move_calculation.hidden_singles(game_state, legal_moves)
+
+        taboo_move_calculation.locked_candidates_rows(game_state, legal_moves, rows, blocks)
+        taboo_move_calculation.locked_candidates_columns(game_state, legal_moves, columns, blocks)
+
+        taboo_move_calculation.obvious_singles(game_state, legal_moves)
+        taboo_move_calculation.hidden_singles(game_state, legal_moves)
 
         ###
-        # Add calls to heuristics!!
+        # Then, use heuristics to help choose the best possible moves
         ###
 
         legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
-
-        # remove squares that have more than x options left
-        # legal_moves = heuristics.remove_squares_with_many_options(legal_moves, 3)
-        # print(legal_moves)
 
         # Write everything to a list
         moves_list = []
