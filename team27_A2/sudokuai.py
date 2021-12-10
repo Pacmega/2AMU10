@@ -1,4 +1,5 @@
 from typing import List
+from collections import defaultdict
 
 from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
@@ -169,18 +170,25 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         # Check the compute_all_legal_moves function for type specifications.
         (legal_moves, rows, columns, blocks) = game_helpers.compute_all_legal_moves(game_state)
 
+        # Create a dictionary to carry the found taboo moves. Note that this defaultdict
+        #   always returns a list of taboo moves for a cell, which is an empty list
+        #   if there are no known values.
+        taboo_moves = defaultdict(lambda: [])
+
         ###
         # Use heuristics to discover legal moves that would be taboo
         ###
         # TODO: Discover the best order of heuristic applications
-        taboo_move_calculation.obvious_singles(game_state, legal_moves)
-        taboo_move_calculation.hidden_singles(game_state, legal_moves)
+        # TODO: confirm that taboo moves functions as intended
 
-        taboo_move_calculation.locked_candidates_rows(game_state, legal_moves, rows, blocks)
-        taboo_move_calculation.locked_candidates_columns(game_state, legal_moves, columns, blocks)
+        taboo_move_calculation.obvious_singles(game_state, legal_moves, taboo_moves)
+        taboo_move_calculation.hidden_singles(game_state, legal_moves, taboo_moves)
 
-        taboo_move_calculation.obvious_singles(game_state, legal_moves)
-        taboo_move_calculation.hidden_singles(game_state, legal_moves)
+        taboo_move_calculation.locked_candidates_rows(game_state, legal_moves, rows, blocks, taboo_moves)
+        taboo_move_calculation.locked_candidates_columns(game_state, legal_moves, columns, blocks, taboo_moves)
+
+        taboo_move_calculation.obvious_singles(game_state, legal_moves, taboo_moves)
+        taboo_move_calculation.hidden_singles(game_state, legal_moves, taboo_moves)
 
         ###
         # Then, use heuristics to help choose the best possible moves
