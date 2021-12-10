@@ -1,5 +1,4 @@
-import random
-from typing import List, Dict
+from typing import List
 
 from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
@@ -22,6 +21,35 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         super().__init__()
 
+    class Node:
+        """
+        The Node inner class stores a game state and its respective subtree. For the minimax, a root node is created
+        which is used throughout the iterative deepening process to minimize duplicate calculations.
+        """
+
+        def __init__(self, game_state: GameState):
+            """
+            Creates a new Node, stores the given game state, and initializes an empty list of children.
+            """
+            self.game_state = game_state
+            self.children: List[SudokuAI.Node] = []
+
+        def extend_node(self):
+            """
+            This function expands the node with the valuable moves as calculated by the agent.
+            First, it gets the valuable moves from the agent.
+            Then, it loops over all determined valuable moves, simulates these moves, creates a new node with the new
+                game state and appends this new node to the list of children.
+            """
+            if len(self.children) > 0:
+                raise Exception("extend tree should not be called on an already extended node!")
+
+            valuable_moves = SudokuAI.get_valuable_moves(self.game_state)
+
+            for move in valuable_moves:
+                new_game_state = game_helpers.simulate_move(self.game_state, move)
+                self.children.append(SudokuAI.Node(new_game_state))
+
     def compute_best_move(self, game_state: GameState) -> None:
         """
         Main agent function to call. This function iteratively explores the
@@ -35,20 +63,23 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         i = 1
         max_depth = 20
 
+        # Initialize the root node, which is going to keep track of all the explored states.
+        root = self.Node(game_state)
+
         # TODO decide what to do with this
         # Suggest a random legal move at first to make sure we always have something
         # self.propose_move(random.choice(self.compute_all_legal_moves(game_state)))
 
         while i < max_depth:
-            if game_helpers.board_filled_in(game_state):
+            if game_helpers.board_filled_in(root.game_state):
                 break
 
             # Which player we are can be deduced from the number of previous
             #   moves, and from that we can tell whether we want to maximize
             #   or minimize our evaluation function (score P1 - score P2)
-            maximizing_player = not bool(len(game_state.moves) % 2)
+            maximizing_player = not bool(len(root.game_state.moves) % 2)
 
-            value, optimal_move = self.minimax(game_state, i, maximizing_player, -100000, 100000)
+            value, optimal_move = self.minimax(root, i, maximizing_player, -100000, 100000)
             if optimal_move is None:
                 break
             else:
@@ -58,7 +89,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
             i += 1
 
-    def minimax(self, game_state: GameState, depth: int, maximizing_player: bool, alpha: int, beta: int) -> (int, Move):
+    def minimax(self, node: Node, depth: int, maximizing_player: bool, alpha: int, beta: int) -> (int, Move):
         """
         The minimax algorithm used by this agent to find the best move possible,
         also using Alpha-Beta pruning in order to stops evaluating a move sooner
@@ -73,20 +104,24 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         @return:                    A tuple specifying the value of this move for this player, and the corresponding
                                         move.
         """
-        if depth == 0 or game_helpers.board_filled_in(game_state):
-            return self.evaluate(game_state), None
+        if depth == 0 or game_helpers.board_filled_in(node.game_state):
+            return self.evaluate(node.game_state), None
 
         if maximizing_player:
             value = -100000
             best_move = None
-            for move in self.get_valuable_moves(game_state):
-                # Simulate a possible move, and recursively call minimax again
-                #   to explore further down the tree how this move plays out.
-                new_game_state = game_helpers.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth - 1, False, alpha, beta)
+
+            # Check if the next layer of the tree is already present
+            #   If not, expand the tree
+            if len(node.children) == 0:
+                node.extend_node()
+
+            for child in node.children:
+                # For each of the children, run minimax again
+                new_value, new_move = self.minimax(child, depth - 1, False, alpha, beta)
 
                 if new_value > value:
-                    best_move = move
+                    best_move = child.game_state.moves[-1]
                     value = new_value
 
                 if value >= beta:
@@ -98,14 +133,18 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         else:
             value = 1000000
             best_move = None
-            for move in self.get_valuable_moves(game_state):
-                # Simulate a possible move, and recursively call minimax again
-                #   to explore further down the tree how this move plays out.
-                new_game_state = game_helpers.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth - 1, True, alpha, beta)
+
+            # Check if the next layer of the tree is already present
+            #   If not, expand the tree
+            if len(node.children) == 0:
+                node.extend_node()
+
+            for child in node.children:
+                # For each of the children, run minimax again
+                new_value, new_move = self.minimax(child, depth - 1, True, alpha, beta)
 
                 if new_value < value:
-                    best_move = move
+                    best_move = child.game_state.moves[-1]
                     value = new_value
 
                 if value <= alpha:
@@ -114,7 +153,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 beta = max(beta, value)
             return value, best_move
 
-    def get_valuable_moves(self, game_state: GameState) -> List[Move]:
+    @staticmethod
+    def get_valuable_moves(game_state: GameState) -> List[Move]:
         """
         This function computes all valuable moves, according to a set of heuristics, which are then to be explored by
         the minimax algorithm.
