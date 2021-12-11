@@ -115,6 +115,7 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
         if len(moves) > 1:
             to_remove.append(key)
 
-    for key in to_remove:
-        moves_under_consideration.pop(key)
+    if len(moves_under_consideration.keys()) - len(to_remove) > 7:
+        for key in to_remove:
+            moves_under_consideration.pop(key)
     return moves_under_consideration
