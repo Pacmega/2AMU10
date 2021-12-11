@@ -94,7 +94,12 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                 opponent_can_finish_if_filled = True if len(column_allowed) == 2 else opponent_can_finish_if_filled
                 opponent_can_finish_if_filled = True if len(block_allowed) == 2 else opponent_can_finish_if_filled
 
-                if opponent_can_finish_if_filled:
+                above_3_missing = 0
+                above_3_missing += 1 if len(row_allowed) > 3 else 0
+                above_3_missing += 1 if len(column_allowed) > 3 else 0
+                above_3_missing += 1 if len(block_allowed) > 3 else 0
+
+                if opponent_can_finish_if_filled or above_3_missing >= 2:
                     to_remove.append((i, j))
 
     if len(moves_under_consideration.keys()) - len(to_remove) > 7:
