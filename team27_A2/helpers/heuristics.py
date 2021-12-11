@@ -3,6 +3,8 @@ from typing import Dict, Tuple, List, Set
 from competitive_sudoku.sudoku import GameState
 from team27_A2.helpers import get_block_top_left_coordinates
 
+import random
+
 
 def remove_squares_with_many_options(moves_under_consideration: Dict[Tuple[int, int], List[int]],
                                      number_of_options: int):
@@ -67,3 +69,52 @@ def force_highest_points_moves(game_state: GameState,
     else:
         # Otherwise, return the original dictionary of moves.
         return moves_under_consideration
+
+
+def remove_moves_that_allows_opponent_to_score(game_state: GameState,
+                                               moves_under_consideration: Dict[Tuple[int, int], List[int]],
+                                               allowed_in_rows: List[Set[int]],
+                                               allowed_in_columns: List[Set[int]],
+                                               allowed_in_blocks: Dict[Tuple[int, int], List[int]]):
+    """
+    Removes moves (in early game) that allow the opponent to easily score points
+    """
+    to_remove = []
+
+    for i in range(game_state.board.N):
+        for j in range(game_state.board.N):
+            if (i, j) in moves_under_consideration:
+                row_allowed = allowed_in_rows[i]
+                column_allowed = allowed_in_columns[j]
+                block_allowed = allowed_in_blocks[
+                    get_block_top_left_coordinates(i, j, game_state.board.m, game_state.board.n)]
+
+                opponent_can_finish_if_filled = False
+                opponent_can_finish_if_filled = True if len(row_allowed) == 2 else opponent_can_finish_if_filled
+                opponent_can_finish_if_filled = True if len(column_allowed) == 2 else opponent_can_finish_if_filled
+                opponent_can_finish_if_filled = True if len(block_allowed) == 2 else opponent_can_finish_if_filled
+
+                if opponent_can_finish_if_filled:
+                    to_remove.append((i, j))
+
+    if len(moves_under_consideration.keys()) - len(to_remove) > 7:
+        for i in range(len(to_remove)):
+            moves_under_consideration.pop(to_remove[i])
+
+    return moves_under_consideration
+
+
+def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[int]]):
+    """
+    If there are still squares with more than one option, we don't want to guess, and thus better just remove all
+    options of those squares.
+    """
+    to_remove = []
+    for key in moves_under_consideration.keys():
+        moves = moves_under_consideration[key]
+        if len(moves) > 1:
+            to_remove.append(key)
+
+    for key in to_remove:
+        moves_under_consideration.pop(key)
+    return moves_under_consideration
