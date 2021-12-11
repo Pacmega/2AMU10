@@ -1,5 +1,6 @@
 from typing import List
 from collections import defaultdict
+import random
 
 from competitive_sudoku.sudoku import GameState, Move
 import competitive_sudoku.sudokuai
@@ -121,6 +122,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 # For each of the children, run minimax again
                 new_value, new_move = self.minimax(child, depth - 1, False, alpha, beta)
 
+                if new_value == value:
+                    if random.random() > 0.8:
+                        best_move = child.game_state.moves[-1]
+
                 if new_value > value:
                     best_move = child.game_state.moves[-1]
                     value = new_value
@@ -143,6 +148,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             for child in node.children:
                 # For each of the children, run minimax again
                 new_value, new_move = self.minimax(child, depth - 1, True, alpha, beta)
+
+                if new_value == value:
+                    if random.random() > 0.8:
+                        best_move = child.game_state.moves[-1]
 
                 if new_value < value:
                     best_move = child.game_state.moves[-1]
@@ -195,6 +204,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         ###
 
         legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
+        # legal_moves = heuristics.remove_exclusively_even_moves(game_state, legal_moves, rows, columns, blocks)
+        # legal_moves = heuristics.one_move_per_square(legal_moves)
 
         # Write everything to a list
         moves_list = []
