@@ -35,6 +35,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             """
             self.game_state = game_state
             self.children: List[SudokuAI.Node] = []
+            # This playing_taboo variable is relevant because we do not make use of the future when
+            #   we're playing a taboo move, so exploring said future is a waste of resources.
+            self.playing_taboo = False
 
         def extend_node(self):
             """
@@ -46,9 +49,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             if len(self.children) > 0:
                 raise Exception("extend tree should not be called on an already extended node!")
 
-            valuable_moves, taboo_moves = SudokuAI.get_valuable_moves(self.game_state)
+            valuable_moves, taboo_moves, can_score = SudokuAI.get_valuable_moves(self.game_state)
 
-            if self.want_to_play_taboo():
+            if taboo_moves and self._want_to_play_taboo(can_score):
+                self.playing_taboo = True
                 for move in taboo_moves:
                     new_game_state = game_helpers.simulate_move(self.game_state, move)
                     self.children.append(SudokuAI.Node(new_game_state))
@@ -57,8 +61,19 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                     new_game_state = game_helpers.simulate_move(self.game_state, move)
                     self.children.append(SudokuAI.Node(new_game_state))
 
-        def want_to_play_taboo(self):
-            raise NotImplementedError(":)")
+        def _want_to_play_taboo(self, can_score: bool) -> bool:
+            if can_score:
+                # If we can score, we definitely don't want to play a taboo move and let the opponent score
+                return False
+            elif game_helpers.even_number_of_squares_left(self.game_state) and \
+                    game_helpers.board_half_filled_in(self.game_state):
+                # We can't score, we are not player from a position we want to be in, so use this
+                #   chance to swap turns
+                return True
+            else:
+                # Can't score right now, but our position is acceptable. Just play normally.
+                return False
+
 
     def compute_best_move(self, game_state: GameState) -> None:
         """
@@ -82,7 +97,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         if root.playing_taboo:
             # No real need to bother with the minimax part if we're playing taboo moves
-            # TODO: but we probably don't want to play a taboo move if we could be scoring points
             return
 
         while i < max_depth:
@@ -210,7 +224,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         ###
 
         legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
-        legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
+        legal_moves, can_score = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
                                                                             blocks)
         legal_moves = heuristics.one_move_per_square(legal_moves)
 
@@ -218,20 +232,20 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         moves_list = []
         taboo_list = []
 
-        for square in taboo_moves.keys():
-            moves: List[int] = taboo_moves[square]
-            for move in moves:
-                taboo_list.append(Move(square[0], square[1], move))
-
         for square in legal_moves.keys():
             moves: List[int] = legal_moves[square]
             for move in moves:
                 moves_list.append(Move(square[0], square[1], move))
 
+        for square in taboo_moves.keys():
+            moves: List[int] = taboo_moves[square]
+            for move in moves:
+                taboo_list.append(Move(square[0], square[1], move))
+
         random.shuffle(moves_list)
         random.shuffle(taboo_list)
 
-        return moves_list, taboo_list
+        return moves_list, taboo_list, can_score
 
 
     def evaluate(self, game_state: GameState):

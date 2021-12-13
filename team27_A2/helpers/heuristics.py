@@ -3,9 +3,6 @@ from typing import Dict, Tuple, List, Set
 from competitive_sudoku.sudoku import GameState
 from team27_A2.helpers import get_block_top_left_coordinates
 
-import random
-
-
 def remove_squares_with_many_options(moves_under_consideration: Dict[Tuple[int, int], List[int]],
                                      number_of_options: int):
     """
@@ -77,9 +74,22 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                                                allowed_in_columns: List[Set[int]],
                                                allowed_in_blocks: Dict[Tuple[int, int], List[int]]):
     """
-    Removes moves (in early game) that allow the opponent to easily score points
+    This function calculates several combined heuristics (to save computational time).
+    It loops over each empty square, and checks whether
+        1. If filled in, can the opponent then score points. If so, do not consider the move.
+        2. Do 2 or more of respective row, column or block have more than 3 open squares left. If so, this move is so
+            far away from useful that we should not consider it.
+    @param game_state: Current GameState that the moves are under consideration on.
+    @param moves_under_consideration: A dict of (row,column):[values] describing which moves should be considered.
+    @param allowed_in_rows: A list (size N) of sets, representing the allowed numbers in each row
+    @param allowed_in_columns: A list (size N) of sets, representing the allowed numbers in each column
+    @param allowed_in_blocks: A dictionary of coordinates as keys (top left square of a block),
+                              with a set of the allowed numbers in the respective block as the value.
+    @return: A dict of (row,column):[values] describing which moves should be considered.
     """
     to_remove = []
+
+    can_score = False
 
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):
@@ -98,32 +108,30 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                 opponent_can_finish_if_filled = True if amount_allowed_in_column == 2 else opponent_can_finish_if_filled
                 opponent_can_finish_if_filled = True if amount_allowed_in_block == 2 else opponent_can_finish_if_filled
 
-                can_score_points = False
-                if amount_allowed_in_row == 1 or amount_allowed_in_block == 1 or amount_allowed_in_column == 1:
-                    can_score_points = True
-
                 above_3_missing = 0
                 above_3_missing += 1 if len(row_allowed) > 3 else 0
                 above_3_missing += 1 if len(column_allowed) > 3 else 0
                 above_3_missing += 1 if len(block_allowed) > 3 else 0
 
-                if opponent_can_finish_if_filled or (above_3_missing >= 2 and not can_score_points):
+                if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
+                    can_score = True
+
+                if opponent_can_finish_if_filled or above_3_missing >= 2:
                     to_remove.append((i, j))
 
-    # if len(moves_under_consideration.keys()) - len(to_remove) <= 7:
-    #     to_remove = random.sample(to_remove, max(0, len(moves_under_consideration) - 7))
-
-    if len(moves_under_consideration.keys()) - len(to_remove) > 7:
+    if len(moves_under_consideration.keys()) - len(to_remove) > 3:
         for i in range(len(to_remove)):
             moves_under_consideration.pop(to_remove[i])
 
-    return moves_under_consideration
+    return moves_under_consideration, can_score
 
 
 def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[int]]):
     """
     If there are still squares with more than one option, we don't want to guess, and thus better just remove all
-    options of those squares.
+    options of those squares. If that means that we have less than 7 potential squares left, they are not removed.
+    @param moves_under_consideration:   A dict of (row,column):[values] describing which moves should be considered.
+    @return: A dict of (row,column):[values] describing which moves should be considered.
     """
     to_remove = []
     for key in moves_under_consideration.keys():
