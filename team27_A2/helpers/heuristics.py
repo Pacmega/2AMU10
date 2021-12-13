@@ -125,6 +125,47 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
             moves_under_consideration.pop(key)
     return moves_under_consideration
 
+
+def only_max_two_left_in_row_column_block(allowed_in_rows: List[Set[int]],
+                                          allowed_in_columns: List[Set[int]],
+                                          allowed_in_blocks: Dict[Tuple[int, int], List[int]]) -> bool:
+    """
+    Helper function to check if there are only situations in the game left where the current player,
+    no matter what they do, creates an opportunity for the opponent to secure points. This is effectively
+    guaranteed to only occur in the endgame, where points often come fast and in large numbers.
+
+    NOTE: This function specifically only checks if there are exactly two left. For example, if there is
+    a row with two values remaining but those values are split over two separate blocks that are each only
+    missing a single value, that is perfectly fine as far as this function is concerned.
+
+    @param allowed_in_rows:    A list (size N) of sets, representing the allowed numbers in each row
+    @param allowed_in_columns: A list (size N) of sets, representing the allowed numbers in each column
+    @param allowed_in_blocks:  A dictionary of coordinates as keys (top left square of a block),
+                                   with a set of the allowed numbers in the respective block as the value.
+    @return:                   A boolean stating whether there are only ever at most two values remaining
+                                   in a row/column/block
+    """
+    # TODO: note to self - Don't neglect the option of for example row completion via single cells in 2 blocks,
+    #       which would give 2 blocks with 1 left but is still very much an endgame possibility
+    for row in allowed_in_rows:
+        if len(row) <= 2:
+            # Counterexample found, this one is not nearly full
+            return False
+
+    for column in allowed_in_columns:
+        if len(column) <= 2:
+            # Counterexample found, this one is not nearly full
+            return False
+
+    for block_coordinates in allowed_in_blocks:
+        if len(allowed_in_blocks[block_coordinates]) <= 2:
+            # Counterexample found, this one is not nearly full
+            return False
+
+    # There exists no counterexample, all rows, blocks and columns in the game are either full or nearly full
+    return True
+
+
 #here i am checking if there are 2 in a block
 #but again i could not test so i am not sure it is acutally correct or i think it is correct because that's how it made sense to me
 #i did it only if it has 2 left in one square but i did not check for multiples. i can think of that after 12:00 
@@ -148,6 +189,7 @@ def two_left_in_a_block(game_state: GameState) -> bool:
             column += game_state.board.n
         row += game_state.board.m
     return False
+
 
 #here i want to check if before making a move there is an even or odd number of squares to fill in
 #if the number is even then it should force a taboo move
