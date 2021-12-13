@@ -81,12 +81,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             #   or minimize our evaluation function (score P1 - score P2)
             maximizing_player = not bool(len(root.game_state.moves) % 2)
 
-            value, optimal_moves = self.minimax(root, i, maximizing_player, -100000, 100000)
+            value, optimal_move = self.minimax(root, i, maximizing_player, -100000, 100000)
             print(value)
-            if optimal_moves is None:
+            if optimal_move is None:
                 break
             else:
-                self.propose_move(random.choice(optimal_moves))
+                self.propose_move(optimal_move)
 
             print("Completed depth: " + str(i))
 
@@ -118,45 +118,45 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         if maximizing_player:
             value = -100000
-            best_moves = []
+            best_move = None
 
             for child in node.children:
                 # For each of the children, run minimax again
-                new_value, new_move = self.minimax(child, depth - 1, False, alpha, beta)
+                new_value, _ = self.minimax(child, depth - 1, False, alpha, beta)
 
                 if new_value > value:
                     # A more optimal (or the first functional) move was found, start maintaining
                     #   a list of moves with this value so that we can pick one of those to play
 
-                    best_moves = [child.game_state.moves[-1]]
+                    best_move = child.game_state.moves[-1]
                     value = new_value
 
                 alpha = max(alpha, value)
 
                 if value >= beta:
                     break
-            return value, best_moves
+            return value, best_move
 
         else:
             value = 1000000
-            best_moves = []
+            best_move = None
 
             for child in node.children:
 
                 # For each of the children, run minimax again
-                new_value, new_move = self.minimax(child, depth - 1, True, alpha, beta)
+                new_value, _ = self.minimax(child, depth - 1, True, alpha, beta)
 
                 if new_value < value:
                     # A more optimal (or the first functional) move was found, start maintaining
                     #   a list of moves with this value so that we can pick one of those to play
-                    best_moves = [child.game_state.moves[-1]]
+                    best_move = child.game_state.moves[-1]
                     value = new_value
 
                 beta = min(beta, value)
 
                 if value <= alpha:
                     break
-            return value, best_moves
+            return value, best_move
 
     @staticmethod
     def get_valuable_moves(game_state: GameState) -> List[Move]:
@@ -199,7 +199,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         ###
 
         legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
-        legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns, blocks)
+        legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
+                                                                            blocks)
         legal_moves = heuristics.one_move_per_square(legal_moves)
 
         # Write everything to a list
@@ -209,6 +210,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             for move in moves:
                 moves_list.append(Move(square[0], square[1], move))
 
+        random.shuffle(moves_list)
         return moves_list
 
     def evaluate(self, game_state: GameState):
