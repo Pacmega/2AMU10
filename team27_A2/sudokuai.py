@@ -70,7 +70,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         # Suggest a random legal move at first to make sure we always have something
         root.extend_node()
-        self.propose_move(root.children[0].game_state.moves[-1])
+        self.propose_move(random.choice(root.children).game_state.moves[-1])
 
         while i < max_depth:
             if game_helpers.board_filled_in(root.game_state):
