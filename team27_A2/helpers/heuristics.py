@@ -89,6 +89,8 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
     """
     to_remove = []
 
+    can_score = False
+
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):
             if (i, j) in moves_under_consideration:
@@ -111,6 +113,9 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                 above_3_missing += 1 if len(column_allowed) > 3 else 0
                 above_3_missing += 1 if len(block_allowed) > 3 else 0
 
+                if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
+                    can_score = True
+
                 if opponent_can_finish_if_filled or above_3_missing >= 2:
                     to_remove.append((i, j))
 
@@ -118,7 +123,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
         for i in range(len(to_remove)):
             moves_under_consideration.pop(to_remove[i])
 
-    return moves_under_consideration
+    return moves_under_consideration, can_score
 
 
 def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[int]]):

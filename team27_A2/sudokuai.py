@@ -214,20 +214,19 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         # Then, if not playing a taboo, use heuristics to help choose the best possible moves
         ###
 
-        if not playing_taboo:
-            legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
-            legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
-                                                                                blocks)
-            legal_moves = heuristics.one_move_per_square(legal_moves)
+        legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
+        legal_moves, can_score = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
+                                                                            blocks)
+        legal_moves = heuristics.one_move_per_square(legal_moves)
 
         # Write everything to a list
         moves_list = []
-        if taboo_moves and playing_taboo:
+        if taboo_moves and playing_taboo and not can_score:
             for square in taboo_moves.keys():
                 moves: List[int] = taboo_moves[square]
                 for move in moves:
                     moves_list.append(Move(square[0], square[1], move))
-        else: # meaning we are playing a taboo move
+        else:  # meaning we are playing a normal move
             for square in legal_moves.keys():
                 moves: List[int] = legal_moves[square]
                 for move in moves:
