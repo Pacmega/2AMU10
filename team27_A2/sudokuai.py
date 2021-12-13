@@ -35,6 +35,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             """
             self.game_state = game_state
             self.children: List[SudokuAI.Node] = []
+            self.playing_taboo = False
 
         def extend_node(self):
             """
@@ -46,7 +47,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             if len(self.children) > 0:
                 raise Exception("extend tree should not be called on an already extended node!")
 
-            valuable_moves = SudokuAI.get_valuable_moves(self.game_state)
+            # get_valuable_moves decides whether we are playing taboo moves or not
+            valuable_moves, self.playing_taboo = SudokuAI.get_valuable_moves(self.game_state)
 
             for move in valuable_moves:
                 new_game_state = game_helpers.simulate_move(self.game_state, move)
@@ -60,7 +62,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         it is allowed. This function does not terminate in normal execution.
         @param game_state:  The current GameState that the next move should be
                                 computed for.
-        @return:            Nothing. (function should not terminate in normal execution)
+        @return:            Nothing.
         """
         i = 1
         max_depth = 20
@@ -71,6 +73,11 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         # Suggest a random legal move at first to make sure we always have something
         root.extend_node()
         self.propose_move(random.choice(root.children).game_state.moves[-1])
+
+        if root.playing_taboo:
+            # No real need to bother with the minimax part if we're playing taboo moves
+            # TODO: but we probably don't want to play a taboo move if we could be scoring points
+            return
 
         while i < max_depth:
             if game_helpers.board_filled_in(root.game_state):
@@ -179,6 +186,15 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         #   if there are no known values.
         taboo_moves = defaultdict(lambda: [])
 
+        # We can at this point also already determine by basic boards observations whether we
+        #   want to play a taboo move instead of a valid one. We want this if:
+        #   - there is an even number of empty spaces remaining on the board
+        #   - the board is >= 50% filled (to not be stalling because we're already trying
+        #                                 to set up for the endgame from turn 1)
+        playing_taboo = False
+        if game_helpers.even_number_of_squares_left(game_state) and game_helpers.board_half_filled_in(game_state):
+            playing_taboo = True
+
         ###
         # Use heuristics to discover legal moves that would be taboo
         ###
@@ -195,23 +211,30 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         taboo_move_calculation.hidden_singles(game_state, legal_moves, taboo_moves)
 
         ###
-        # Then, use heuristics to help choose the best possible moves
+        # Then, if not playing a taboo, use heuristics to help choose the best possible moves
         ###
 
-        legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
-        legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
-                                                                            blocks)
-        legal_moves = heuristics.one_move_per_square(legal_moves)
+        if not playing_taboo:
+            legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
+            legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
+                                                                                blocks)
+            legal_moves = heuristics.one_move_per_square(legal_moves)
 
         # Write everything to a list
         moves_list = []
-        for square in legal_moves.keys():
-            moves: List[int] = legal_moves[square]
-            for move in moves:
-                moves_list.append(Move(square[0], square[1], move))
+        if taboo_moves and playing_taboo:
+            for square in taboo_moves.keys():
+                moves: List[int] = taboo_moves[square]
+                for move in moves:
+                    moves_list.append(Move(square[0], square[1], move))
+        else: # meaning we are playing a taboo move
+            for square in legal_moves.keys():
+                moves: List[int] = legal_moves[square]
+                for move in moves:
+                    moves_list.append(Move(square[0], square[1], move))
 
         random.shuffle(moves_list)
-        return moves_list
+        return moves_list, playing_taboo
 
     def evaluate(self, game_state: GameState):
         """
