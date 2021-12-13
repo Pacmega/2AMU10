@@ -68,9 +68,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         # Initialize the root node, which is going to keep track of all the explored states.
         root = self.Node(game_state)
 
-        # TODO decide what to do with this
         # Suggest a random legal move at first to make sure we always have something
-        # self.propose_move(random.choice(self.compute_all_legal_moves(game_state)))
+        root.extend_node()
+        self.propose_move(root.children[0].game_state.moves[-1])
 
         while i < max_depth:
             if game_helpers.board_filled_in(root.game_state):
