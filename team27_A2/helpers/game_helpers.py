@@ -19,6 +19,7 @@ def board_filled_in(game_state: GameState) -> bool:
                 return False
     return True
 
+
 def compute_all_legal_moves(game_state: GameState) \
         -> (Dict[Tuple[int, int], List[int]], List[Set[int]], List[Set[int]], Dict[Tuple[int, int], List[int]]):
     """

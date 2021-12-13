@@ -3,9 +3,6 @@ from typing import Dict, Tuple, List, Set
 from competitive_sudoku.sudoku import GameState
 from team27_A2.helpers import get_block_top_left_coordinates
 
-import random
-
-
 def remove_squares_with_many_options(moves_under_consideration: Dict[Tuple[int, int], List[int]],
                                      number_of_options: int):
     """
@@ -98,22 +95,15 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                 opponent_can_finish_if_filled = True if amount_allowed_in_column == 2 else opponent_can_finish_if_filled
                 opponent_can_finish_if_filled = True if amount_allowed_in_block == 2 else opponent_can_finish_if_filled
 
-                can_score_points = False
-                if amount_allowed_in_row == 1 or amount_allowed_in_block == 1 or amount_allowed_in_column == 1:
-                    can_score_points = True
-
                 above_3_missing = 0
                 above_3_missing += 1 if len(row_allowed) > 3 else 0
                 above_3_missing += 1 if len(column_allowed) > 3 else 0
                 above_3_missing += 1 if len(block_allowed) > 3 else 0
 
-                if opponent_can_finish_if_filled or (above_3_missing >= 2 and not can_score_points):
+                if opponent_can_finish_if_filled or above_3_missing >= 2:
                     to_remove.append((i, j))
 
-    # if len(moves_under_consideration.keys()) - len(to_remove) <= 7:
-    #     to_remove = random.sample(to_remove, max(0, len(moves_under_consideration) - 7))
-
-    if len(moves_under_consideration.keys()) - len(to_remove) > 7:
+    if len(moves_under_consideration.keys()) - len(to_remove) > 3:
         for i in range(len(to_remove)):
             moves_under_consideration.pop(to_remove[i])
 
