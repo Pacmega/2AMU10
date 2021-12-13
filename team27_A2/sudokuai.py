@@ -81,15 +81,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             #   or minimize our evaluation function (score P1 - score P2)
             maximizing_player = not bool(len(root.game_state.moves) % 2)
 
-            value, optimal_moves = self.minimax(root, i, maximizing_player, -100000, 100000)
-            if optimal_moves is None:
+            value, optimal_move = self.minimax(root, i, maximizing_player, -100000, 100000)
+            print(value)
+            if optimal_move is None:
                 break
             else:
-                # print('Optimal value spotted:', value)
-                # print('Associated moves:')
-                # for move in optimal_moves:
-                #     print(move)
-                self.propose_move(random.choice(optimal_moves))
+                self.propose_move(optimal_move)
 
             print("Completed depth: " + str(i))
 
@@ -114,63 +111,52 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         if depth == 0 or game_helpers.board_filled_in(node.game_state):
             return self.evaluate(node.game_state), None
 
+        # Check if the next layer of the tree is already present
+        #   If not, expand the tree
+        if len(node.children) == 0:
+            node.extend_node()
+
         if maximizing_player:
             value = -100000
-            best_moves = None
-
-            # Check if the next layer of the tree is already present
-            #   If not, expand the tree
-            if len(node.children) == 0:
-                node.extend_node()
+            best_move = None
 
             for child in node.children:
                 # For each of the children, run minimax again
-                new_value, new_move = self.minimax(child, depth - 1, False, alpha, beta)
+                new_value, _ = self.minimax(child, depth - 1, False, alpha, beta)
 
                 if new_value > value:
                     # A more optimal (or the first functional) move was found, start maintaining
                     #   a list of moves with this value so that we can pick one of those to play
-                    best_moves = [child.game_state.moves[-1]]
+
+                    best_move = child.game_state.moves[-1]
                     value = new_value
-                elif new_value == value:
-                    # This is not the first move of this value that is found, it is not an improvement,
-                    #   but it is another move that we could play that seems to be just as valuable
-                    best_moves.append(child.game_state.moves[-1])
+
+                alpha = max(alpha, value)
 
                 if value >= beta:
                     break
-
-                alpha = max(alpha, value)
-            return value, best_moves
+            return value, best_move
 
         else:
             value = 1000000
-            best_moves = None
-
-            # Check if the next layer of the tree is already present
-            #   If not, expand the tree
-            if len(node.children) == 0:
-                node.extend_node()
+            best_move = None
 
             for child in node.children:
+
                 # For each of the children, run minimax again
-                new_value, new_move = self.minimax(child, depth - 1, True, alpha, beta)
+                new_value, _ = self.minimax(child, depth - 1, True, alpha, beta)
 
                 if new_value < value:
                     # A more optimal (or the first functional) move was found, start maintaining
                     #   a list of moves with this value so that we can pick one of those to play
-                    best_moves = [child.game_state.moves[-1]]
+                    best_move = child.game_state.moves[-1]
                     value = new_value
-                elif new_value == value:
-                    # This is not the first move of this value that is found, it is not an improvement,
-                    #   but it is another move that we could play that seems to be just as valuable
-                    best_moves.append(child.game_state.moves[-1])
+
+                beta = min(beta, value)
 
                 if value <= alpha:
                     break
-
-                beta = max(beta, value)
-            return value, best_moves
+            return value, best_move
 
     @staticmethod
     def get_valuable_moves(game_state: GameState) -> List[Move]:
@@ -213,7 +199,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         ###
 
         legal_moves = heuristics.force_highest_points_moves(game_state, legal_moves, rows, columns, blocks)
-        legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns, blocks)
+        legal_moves = heuristics.remove_moves_that_allows_opponent_to_score(game_state, legal_moves, rows, columns,
+                                                                            blocks)
         legal_moves = heuristics.one_move_per_square(legal_moves)
 
         # Write everything to a list
@@ -223,6 +210,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             for move in moves:
                 moves_list.append(Move(square[0], square[1], move))
 
+        random.shuffle(moves_list)
         return moves_list
 
     def evaluate(self, game_state: GameState):
@@ -231,4 +219,11 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         to see which moves and options are good for either player.
         Calculation used: Player 1's score - Player 2's score
         """
-        return game_state.scores[0] - game_state.scores[1]
+
+        # The player we are simulating for, either P1 or P2, can be deduced
+        #   from the length of the move history (player 1 always goes first)
+        simulating_for = not bool(len(game_state.moves) % 2)
+
+        score = game_state.scores[0] - game_state.scores[1]
+
+        return score

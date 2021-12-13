@@ -89,18 +89,29 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                 block_allowed = allowed_in_blocks[
                     get_block_top_left_coordinates(i, j, game_state.board.m, game_state.board.n)]
 
+                amount_allowed_in_row = len(row_allowed)
+                amount_allowed_in_column = len(column_allowed)
+                amount_allowed_in_block = len(block_allowed)
+
                 opponent_can_finish_if_filled = False
-                opponent_can_finish_if_filled = True if len(row_allowed) == 2 else opponent_can_finish_if_filled
-                opponent_can_finish_if_filled = True if len(column_allowed) == 2 else opponent_can_finish_if_filled
-                opponent_can_finish_if_filled = True if len(block_allowed) == 2 else opponent_can_finish_if_filled
+                opponent_can_finish_if_filled = True if amount_allowed_in_row == 2 else opponent_can_finish_if_filled
+                opponent_can_finish_if_filled = True if amount_allowed_in_column == 2 else opponent_can_finish_if_filled
+                opponent_can_finish_if_filled = True if amount_allowed_in_block == 2 else opponent_can_finish_if_filled
+
+                can_score_points = False
+                if amount_allowed_in_row == 1 or amount_allowed_in_block == 1 or amount_allowed_in_column == 1:
+                    can_score_points = True
 
                 above_3_missing = 0
                 above_3_missing += 1 if len(row_allowed) > 3 else 0
                 above_3_missing += 1 if len(column_allowed) > 3 else 0
                 above_3_missing += 1 if len(block_allowed) > 3 else 0
 
-                if opponent_can_finish_if_filled or above_3_missing >= 2:
+                if opponent_can_finish_if_filled or (above_3_missing >= 2 and not can_score_points):
                     to_remove.append((i, j))
+
+    # if len(moves_under_consideration.keys()) - len(to_remove) <= 7:
+    #     to_remove = random.sample(to_remove, max(0, len(moves_under_consideration) - 7))
 
     if len(moves_under_consideration.keys()) - len(to_remove) > 7:
         for i in range(len(to_remove)):
