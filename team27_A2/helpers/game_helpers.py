@@ -309,8 +309,8 @@ def two_left_in_a_block(game_state: GameState) -> bool:
 #this is how i thought about but looks kinda simple
 def even_number_of_squares_left(game_state: GameState) -> bool:
     empty_squares = 0
-    for i in range (game_state.board.m):
-        for j in range(game_state.board.n):
+    for i in range(game_state.board.N):
+        for j in range(game_state.board.N):
            value = game_state.board.get(i, j)
            if value is game_state.board.empty:
                empty_squares += 1
