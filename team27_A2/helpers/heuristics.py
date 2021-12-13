@@ -124,3 +124,42 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
         for key in to_remove:
             moves_under_consideration.pop(key)
     return moves_under_consideration
+
+#here i am checking if there are 2 in a block
+#but again i could not test so i am not sure it is acutally correct or i think it is correct because that's how it made sense to me
+#i did it only if it has 2 left in one square but i did not check for multiples. i can think of that after 12:00 
+def two_left_in_a_block(game_state: GameState) -> bool:
+    row = 1
+    while row <= game_state.board.m * game_state.board.n:
+        block_start_row = row - (row % game_state.board.m)
+        block_end_row = row + (game_state.board.m - (row % game_state.board.m))
+        column = 1
+        while column <= game_state.board.n * game_state.board.m:
+            block_start_column = column - (column % game_state.board.n)
+            block_end_column = column + (game_state.board.n - (column % game_state.board.n))
+            empty_squares = 0
+            for i in range(block_start_row, block_end_row):
+                for j in range(block_start_column, block_end_column):
+                    value = game_state.board.get(i, j)
+                    if value is game_state.board.empty:
+                        empty_squares += 1
+            if empty_squares % 2 == 0:
+                return True
+            column += game_state.board.n
+        row += game_state.board.m
+    return False
+
+#here i want to check if before making a move there is an even or odd number of squares to fill in
+#if the number is even then it should force a taboo move
+#it made sense in my head but i couldnt test it so i am not sure if i overlooked something or if i did it the right
+#this is how i thought about but looks kinda simple
+def even_number_of_squares_left (game_state:GameState) -> bool:
+    empty_squares = 0
+    for i in range (game_state.board.m):
+        for j in range(game_state.board.n):
+           value = game_state.board.get(i, j)
+           if value is game_state.board.empty:
+               empty_squares += 1
+    if empty_squares % 2 == 0:
+        return True
+    return False
