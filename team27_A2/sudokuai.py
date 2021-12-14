@@ -109,13 +109,13 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             maximizing_player = not bool(len(root.game_state.moves) % 2)
 
             value, optimal_move = self.minimax(root, i, maximizing_player, -100000, 100000)
-            print(value)
+            # print(value)
             if optimal_move is None:
                 break
             else:
                 self.propose_move(optimal_move)
 
-            print("Completed depth: " + str(i))
+            # print("Completed depth: " + str(i))
 
             i += 1
 
