@@ -85,7 +85,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 # Can't score right now, but our position is acceptable. Just play normally.
                 return False
 
-
     def compute_best_move(self, game_state: GameState) -> None:
         """
         Main agent function to call. This function iteratively explores the possible moves and

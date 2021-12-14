@@ -25,6 +25,7 @@ def force_highest_points_moves(game_state: GameState,
     for cell in moves_under_consideration:
         row_index = cell[0]
         column_index = cell[1]
+
         row_allowed = list(allowed_in_rows[row_index])
         column_allowed = list(allowed_in_columns[column_index])
         block_allowed = list(allowed_in_blocks[
@@ -77,6 +78,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
     for cell in moves_under_consideration:
         row_index = cell[0]
         column_index = cell[1]
+
         row_allowed = allowed_in_rows[row_index]
         column_allowed = allowed_in_columns[column_index]
         block_allowed = allowed_in_blocks[
@@ -125,6 +127,7 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
             to_remove.append(key)
 
     if len(moves_under_consideration.keys()) - len(to_remove) > 7:
+        # If this process would cut the options down too far, we don't want to remove.
         for key in to_remove:
             moves_under_consideration.pop(key)
     return

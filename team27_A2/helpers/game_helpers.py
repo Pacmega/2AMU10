@@ -12,6 +12,8 @@ acceptable moves, checking whether the board still contains an empty square, or 
 def board_filled_in(game_state: GameState) -> bool:
     """
     Helper function to check if there are any empty cells on the board.
+    @param game_state: The GameState for which to check if the board is full.
+    @return: Boolean stating whether the board is 100% full or not.
     """
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):
@@ -23,6 +25,8 @@ def board_filled_in(game_state: GameState) -> bool:
 def board_half_filled_in(game_state: GameState) -> bool:
     """
     Helper function to check if the board has been filled for >= 50%.
+    @param game_state: The GameState for which to check if the board is >= 50% full.
+    @return: Boolean stating whether the board is >= 50% full or not.
     """
     cells_filled_in = 0
     total_cells = game_state.board.N * game_state.board.N
@@ -79,8 +83,8 @@ def compute_all_legal_moves(game_state: GameState) \
             if game_state.board.get(i, j) == game_state.board.empty:
                 allowed_moves[(i, j)] = list(
                     rows[i].intersection(columns[j])
-                        .intersection(blocks[get_block_top_left_coordinates(i, j,
-                                                                            game_state.board.m, game_state.board.n)])
+                           .intersection(blocks[get_block_top_left_coordinates(i, j,
+                                                                               game_state.board.m, game_state.board.n)])
                 )
 
     all_empty_squares = allowed_moves.keys()
@@ -109,7 +113,6 @@ def allowed_numbers_in_block(game_state: GameState, row: int, column: int) -> Se
 
     # Determine the exact start and end of the block that this cell
     #   is in with the help of the available board size parameters
-    # Note that there is no requirement for square blocks in this sudoku
     block_start_row = row - (row % game_state.board.m)
     block_end_row = row + (game_state.board.m - (row % game_state.board.m))
     block_start_column = column - (column % game_state.board.n)
