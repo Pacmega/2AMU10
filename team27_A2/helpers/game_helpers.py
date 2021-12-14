@@ -12,6 +12,8 @@ acceptable moves, checking whether the board still contains an empty square, or 
 def board_filled_in(game_state: GameState) -> bool:
     """
     Helper function to check if there are any empty cells on the board.
+    @param game_state: The GameState for which to check if the board is full.
+    @return: Boolean stating whether the board is 100% full or not.
     """
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):
@@ -23,6 +25,8 @@ def board_filled_in(game_state: GameState) -> bool:
 def board_half_filled_in(game_state: GameState) -> bool:
     """
     Helper function to check if the board has been filled for >= 50%.
+    @param game_state: The GameState for which to check if the board is >= 50% full.
+    @return: Boolean stating whether the board is >= 50% full or not.
     """
     cells_filled_in = 0
     total_cells = game_state.board.N * game_state.board.N
@@ -79,8 +83,8 @@ def compute_all_legal_moves(game_state: GameState) \
             if game_state.board.get(i, j) == game_state.board.empty:
                 allowed_moves[(i, j)] = list(
                     rows[i].intersection(columns[j])
-                        .intersection(blocks[get_block_top_left_coordinates(i, j,
-                                                                            game_state.board.m, game_state.board.n)])
+                           .intersection(blocks[get_block_top_left_coordinates(i, j,
+                                                                               game_state.board.m, game_state.board.n)])
                 )
 
     all_empty_squares = allowed_moves.keys()
@@ -109,7 +113,6 @@ def allowed_numbers_in_block(game_state: GameState, row: int, column: int) -> Se
 
     # Determine the exact start and end of the block that this cell
     #   is in with the help of the available board size parameters
-    # Note that there is no requirement for square blocks in this sudoku
     block_start_row = row - (row % game_state.board.m)
     block_end_row = row + (game_state.board.m - (row % game_state.board.m))
     block_start_column = column - (column % game_state.board.n)
@@ -236,79 +239,25 @@ def simulate_move(game_state: GameState, move: Move) -> GameState:
 
 
 def get_block_top_left_coordinates(row_index: int, column_index: int, m: int, n: int) -> Tuple[int, int]:
+    """
+    Small function to retrieve the top left coordinates of the block that a given cell is in.
+    This coordinate can then be used to retrieve data from allowed_in_blocks.
+    @param row_index:    The row coordinate of the cell to retrieve block coordinates for.
+    @param column_index: The column coordinate of the cell to retrieve block coordinates for.
+    @param m:            The number of rows per block (generally stored in game_state.board.m, hence the name).
+    @param n:            The number of columns per block (generally stored in game_state.board.n, hence the name).
+    @return:             A tuple of (row, column) coordinates specifying the top left coordinates of the block.
+    """
     return row_index - (row_index % m), column_index - (column_index % n)
 
 
-def only_max_two_left_in_row_column_block(allowed_in_rows: List[Set[int]],
-                                          allowed_in_columns: List[Set[int]],
-                                          allowed_in_blocks: Dict[Tuple[int, int], List[int]]) -> bool:
-    """
-    Helper function to check if there are only situations in the game left where the current player,
-    no matter what they do, creates an opportunity for the opponent to secure points. This is effectively
-    guaranteed to only occur in the endgame, where points often come fast and in large numbers.
-
-    NOTE: This function specifically only checks if there are exactly two left. For example, if there is
-    a row with two values remaining but those values are split over two separate blocks that are each only
-    missing a single value, that is perfectly fine as far as this function is concerned.
-
-    @param allowed_in_rows:    A list (size N) of sets, representing the allowed numbers in each row
-    @param allowed_in_columns: A list (size N) of sets, representing the allowed numbers in each column
-    @param allowed_in_blocks:  A dictionary of coordinates as keys (top left square of a block),
-                                   with a set of the allowed numbers in the respective block as the value.
-    @return:                   A boolean stating whether there are only ever at most two values remaining
-                                   in a row/column/block
-    """
-    # TODO: note to self - Don't neglect the option of for example row completion via single cells in 2 blocks,
-    #       which would give 2 blocks with 1 left but is still very much an endgame possibility
-    for row in allowed_in_rows:
-        if len(row) <= 2:
-            # Counterexample found, this one is not nearly full
-            return False
-
-    for column in allowed_in_columns:
-        if len(column) <= 2:
-            # Counterexample found, this one is not nearly full
-            return False
-
-    for block_coordinates in allowed_in_blocks:
-        if len(allowed_in_blocks[block_coordinates]) <= 2:
-            # Counterexample found, this one is not nearly full
-            return False
-
-    # There exists no counterexample, all rows, blocks and columns in the game are either full or nearly full
-    return True
-
-
-def two_left_in_a_block(game_state: GameState) -> bool:
-    # here i am checking if there are 2 in a block
-    # but again i could not test so i am not sure it is acutally correct or i think it is correct because that's how it made sense to me
-    # i did it only if it has 2 left in one square but i did not check for multiples. i can think of that after 12:00
-    row = 1
-    while row <= game_state.board.m * game_state.board.n:
-        block_start_row = row - (row % game_state.board.m)
-        block_end_row = row + (game_state.board.m - (row % game_state.board.m))
-        column = 1
-        while column <= game_state.board.n * game_state.board.m:
-            block_start_column = column - (column % game_state.board.n)
-            block_end_column = column + (game_state.board.n - (column % game_state.board.n))
-            empty_squares = 0
-            for i in range(block_start_row, block_end_row):
-                for j in range(block_start_column, block_end_column):
-                    value = game_state.board.get(i, j)
-                    if value is game_state.board.empty:
-                        empty_squares += 1
-            if empty_squares % 2 == 0:
-                return True
-            column += game_state.board.n
-        row += game_state.board.m
-    return False
-
-
 def even_number_of_squares_left(game_state: GameState) -> bool:
-    # here i want to check if before making a move there is an even or odd number of squares to fill in
-    # if the number is even then it should force a taboo move
-    # it made sense in my head but i couldnt test it so i am not sure if i overlooked something or if i did it the right
-    # this is how i thought about but looks kinda simple
+    """
+    Function that scans the board of the given GameState to check if there is an even number
+    of empty cells left on the board.
+    @param game_state: The GameState whose board to check.
+    @return:           A Boolean specifying whether
+    """
     empty_squares = 0
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):

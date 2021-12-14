@@ -1,4 +1,3 @@
-import copy
 from typing import Dict, Tuple, List, Set
 from collections import defaultdict
 
@@ -77,7 +76,8 @@ def locked_candidates_rows(game_state: GameState,
                 # Then the other block cannot put the number in that row
                 blocks_to_check = []
                 for leftmost_column_of_block in range(0, game_state.board.N, columns_per_block):
-                    if (top_row_of_block, leftmost_column_of_block) not in newly_occupied_blocks and number in allowed_in_blocks[(top_row_of_block, leftmost_column_of_block)]:
+                    if (top_row_of_block, leftmost_column_of_block) not in newly_occupied_blocks and \
+                            number in allowed_in_blocks[(top_row_of_block, leftmost_column_of_block)]:
                         blocks_to_check.append((top_row_of_block, leftmost_column_of_block))
 
                 rows_to_check = []
@@ -144,7 +144,8 @@ def locked_candidates_columns(game_state: GameState,
             newly_occupied_blocks = []
             newly_occupied_columns = []
             for top_row_of_block in range(0, game_state.board.N, rows_per_block):
-                if (top_row_of_block, leftmost_column_of_block) in allowed_in_blocks and number in allowed_in_blocks[(top_row_of_block, leftmost_column_of_block)]:
+                if (top_row_of_block, leftmost_column_of_block) in allowed_in_blocks and \
+                        number in allowed_in_blocks[(top_row_of_block, leftmost_column_of_block)]:
                     # For every number, check if it can only go in one column in a block
                     columns_allowing_number = []
 
@@ -254,7 +255,7 @@ def hidden_singles(game_state: GameState,
     #   (== are legal in > 1 cell within that unit)
     non_singles_row = [[] for i in range(game_state.board.N)]
     non_singles_column = [[] for i in range(game_state.board.N)]
-    non_singles_block = [[[] for col_block in range(game_state.board.N // game_state.board.n)] \
+    non_singles_block = [[[] for col_block in range(game_state.board.N // game_state.board.n)]
                              for row_block in range(game_state.board.N // game_state.board.m)]
 
     for possible_single_cell in legal_moves:

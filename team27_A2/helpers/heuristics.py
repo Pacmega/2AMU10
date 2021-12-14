@@ -3,25 +3,6 @@ from typing import Dict, Tuple, List, Set
 from competitive_sudoku.sudoku import GameState
 from team27_A2.helpers import get_block_top_left_coordinates
 
-def remove_squares_with_many_options(moves_under_consideration: Dict[Tuple[int, int], List[int]],
-                                     number_of_options: int):
-    """
-    TODO: might end up deleting this. If it's staying, write docs.
-    """
-    keys = moves_under_consideration.keys()
-    keys_to_remove = []
-    deleted = 0
-
-    for key in keys:
-        if len(moves_under_consideration[key]) >= number_of_options:
-            deleted += 1
-            keys_to_remove.append(key)
-
-    for i in range(len(keys_to_remove)):
-        moves_under_consideration.pop(keys_to_remove[i])
-
-    return moves_under_consideration
-
 
 def force_highest_points_moves(game_state: GameState,
                                moves_under_consideration: Dict[Tuple[int, int], List[int]],
@@ -41,21 +22,22 @@ def force_highest_points_moves(game_state: GameState,
     @return: A dict of (row,column):[values] describing which moves should be considered.
     """
     forced_squares = []
-    for i in range(game_state.board.N):
-        for j in range(game_state.board.N):
-            if (i, j) in moves_under_consideration:
-                row_allowed = list(allowed_in_rows[i])
-                column_allowed = list(allowed_in_columns[j])
-                block_allowed = list(allowed_in_blocks[
-                                         get_block_top_left_coordinates(
-                                             i, j, game_state.board.m, game_state.board.n)])
+    for cell in moves_under_consideration:
+        row_index = cell[0]
+        column_index = cell[1]
 
-                # If there is exactly one value possible in the row, column and block and their values
-                #   are all the same, this value in this spot would give 7 points and this is a
-                #   valuable move for sure.
-                if len(row_allowed) == 1 and len(column_allowed) == 1 and len(block_allowed) == 1:
-                    if row_allowed[0] == column_allowed[0] and row_allowed[0] == block_allowed[0]:
-                        forced_squares.append((i, j))
+        row_allowed = list(allowed_in_rows[row_index])
+        column_allowed = list(allowed_in_columns[column_index])
+        block_allowed = list(allowed_in_blocks[
+                                 get_block_top_left_coordinates(
+                                     row_index, column_index, game_state.board.m, game_state.board.n)])
+
+        # If there is exactly one value possible in the row, column and block and their values
+        #   are all the same, this value in this spot would give 7 points and this is a
+        #   valuable move for sure.
+        if len(row_allowed) == 1 and len(column_allowed) == 1 and len(block_allowed) == 1:
+            if row_allowed[0] == column_allowed[0] and row_allowed[0] == block_allowed[0]:
+                forced_squares.append(cell)
 
     if len(forced_squares) > 0:
         # If there are 7 point value moves under consideration, return only those.
@@ -72,7 +54,8 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                                                moves_under_consideration: Dict[Tuple[int, int], List[int]],
                                                allowed_in_rows: List[Set[int]],
                                                allowed_in_columns: List[Set[int]],
-                                               allowed_in_blocks: Dict[Tuple[int, int], List[int]]):
+                                               allowed_in_blocks: Dict[Tuple[int, int], List[int]]) \
+                                               -> tuple[Dict[Tuple[int, int], List[int]], bool]:
     """
     This function calculates several combined heuristics (to save computational time).
     It loops over each empty square, and checks whether
@@ -85,40 +68,43 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
     @param allowed_in_columns: A list (size N) of sets, representing the allowed numbers in each column
     @param allowed_in_blocks: A dictionary of coordinates as keys (top left square of a block),
                               with a set of the allowed numbers in the respective block as the value.
-    @return: A dict of (row,column):[values] describing which moves should be considered.
+    @return: Two items:
+             1. A dict of (row,column):[values] describing which moves should be considered.
+             2. A boolean denoting whether the player (or rather, the Node) calling the function could score right now.
     """
     to_remove = []
-
     can_score = False
 
-    for i in range(game_state.board.N):
-        for j in range(game_state.board.N):
-            if (i, j) in moves_under_consideration:
-                row_allowed = allowed_in_rows[i]
-                column_allowed = allowed_in_columns[j]
-                block_allowed = allowed_in_blocks[
-                    get_block_top_left_coordinates(i, j, game_state.board.m, game_state.board.n)]
+    for cell in moves_under_consideration:
+        row_index = cell[0]
+        column_index = cell[1]
 
-                amount_allowed_in_row = len(row_allowed)
-                amount_allowed_in_column = len(column_allowed)
-                amount_allowed_in_block = len(block_allowed)
+        row_allowed = allowed_in_rows[row_index]
+        column_allowed = allowed_in_columns[column_index]
+        block_allowed = allowed_in_blocks[
+            get_block_top_left_coordinates(row_index, column_index, game_state.board.m, game_state.board.n)]
 
-                opponent_can_finish_if_filled = False
-                opponent_can_finish_if_filled = True if amount_allowed_in_row == 2 else opponent_can_finish_if_filled
-                opponent_can_finish_if_filled = True if amount_allowed_in_column == 2 else opponent_can_finish_if_filled
-                opponent_can_finish_if_filled = True if amount_allowed_in_block == 2 else opponent_can_finish_if_filled
+        amount_allowed_in_row = len(row_allowed)
+        amount_allowed_in_column = len(column_allowed)
+        amount_allowed_in_block = len(block_allowed)
 
-                above_3_missing = 0
-                above_3_missing += 1 if len(row_allowed) > 3 else 0
-                above_3_missing += 1 if len(column_allowed) > 3 else 0
-                above_3_missing += 1 if len(block_allowed) > 3 else 0
+        opponent_can_finish_if_filled = False
+        opponent_can_finish_if_filled = True if amount_allowed_in_row == 2 else opponent_can_finish_if_filled
+        opponent_can_finish_if_filled = True if amount_allowed_in_column == 2 else opponent_can_finish_if_filled
+        opponent_can_finish_if_filled = True if amount_allowed_in_block == 2 else opponent_can_finish_if_filled
 
-                if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
-                    can_score = True
+        above_3_missing = 0
+        above_3_missing += 1 if len(row_allowed) > 3 else 0
+        above_3_missing += 1 if len(column_allowed) > 3 else 0
+        above_3_missing += 1 if len(block_allowed) > 3 else 0
 
-                if opponent_can_finish_if_filled or above_3_missing >= 2:
-                    to_remove.append((i, j))
+        if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
+            can_score = True
 
+        if opponent_can_finish_if_filled or above_3_missing >= 2:
+            to_remove.append(cell)
+
+    # Ensure that we don't remove so much that there is basically nothing left to play anymore, before removing it
     if len(moves_under_consideration.keys()) - len(to_remove) > 3:
         for i in range(len(to_remove)):
             moves_under_consideration.pop(to_remove[i])
@@ -128,10 +114,11 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
 
 def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[int]]):
     """
-    If there are still squares with more than one option, we don't want to guess, and thus better just remove all
-    options of those squares. If that means that we have less than 7 potential squares left, they are not removed.
-    @param moves_under_consideration:   A dict of (row,column):[values] describing which moves should be considered.
-    @return: A dict of (row,column):[values] describing which moves should be considered.
+    If there are still squares with more than one option, we want to minimize guessing and
+    minimax computation time so we decide to just remove all options of those squares.
+    If that means that we have less than 7 potential squares left, they are not removed.
+    @param moves_under_consideration: A dict of (row,column):[values] describing which moves should be considered.
+    @return:                          None, moves_under_consideration is edited in-place.
     """
     to_remove = []
     for key in moves_under_consideration.keys():
@@ -140,6 +127,7 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
             to_remove.append(key)
 
     if len(moves_under_consideration.keys()) - len(to_remove) > 7:
+        # If this process would cut the options down too far, we don't want to remove.
         for key in to_remove:
             moves_under_consideration.pop(key)
-    return moves_under_consideration
+    return
