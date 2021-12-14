@@ -74,34 +74,33 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
     to_remove = []
     can_score = False
 
-    # TODO: this seems rather inefficient
-    for i in range(game_state.board.N):
-        for j in range(game_state.board.N):
-            if (i, j) in moves_under_consideration:
-                row_allowed = allowed_in_rows[i]
-                column_allowed = allowed_in_columns[j]
-                block_allowed = allowed_in_blocks[
-                    get_block_top_left_coordinates(i, j, game_state.board.m, game_state.board.n)]
+    for cell in moves_under_consideration:
+        row_index = cell[0]
+        column_index = cell[1]
+        row_allowed = allowed_in_rows[row_index]
+        column_allowed = allowed_in_columns[column_index]
+        block_allowed = allowed_in_blocks[
+            get_block_top_left_coordinates(row_index, column_index, game_state.board.m, game_state.board.n)]
 
-                amount_allowed_in_row = len(row_allowed)
-                amount_allowed_in_column = len(column_allowed)
-                amount_allowed_in_block = len(block_allowed)
+        amount_allowed_in_row = len(row_allowed)
+        amount_allowed_in_column = len(column_allowed)
+        amount_allowed_in_block = len(block_allowed)
 
-                opponent_can_finish_if_filled = False
-                opponent_can_finish_if_filled = True if amount_allowed_in_row == 2 else opponent_can_finish_if_filled
-                opponent_can_finish_if_filled = True if amount_allowed_in_column == 2 else opponent_can_finish_if_filled
-                opponent_can_finish_if_filled = True if amount_allowed_in_block == 2 else opponent_can_finish_if_filled
+        opponent_can_finish_if_filled = False
+        opponent_can_finish_if_filled = True if amount_allowed_in_row == 2 else opponent_can_finish_if_filled
+        opponent_can_finish_if_filled = True if amount_allowed_in_column == 2 else opponent_can_finish_if_filled
+        opponent_can_finish_if_filled = True if amount_allowed_in_block == 2 else opponent_can_finish_if_filled
 
-                above_3_missing = 0
-                above_3_missing += 1 if len(row_allowed) > 3 else 0
-                above_3_missing += 1 if len(column_allowed) > 3 else 0
-                above_3_missing += 1 if len(block_allowed) > 3 else 0
+        above_3_missing = 0
+        above_3_missing += 1 if len(row_allowed) > 3 else 0
+        above_3_missing += 1 if len(column_allowed) > 3 else 0
+        above_3_missing += 1 if len(block_allowed) > 3 else 0
 
-                if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
-                    can_score = True
+        if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
+            can_score = True
 
-                if opponent_can_finish_if_filled or above_3_missing >= 2:
-                    to_remove.append((i, j))
+        if opponent_can_finish_if_filled or above_3_missing >= 2:
+            to_remove.append(cell)
 
     # Ensure that we don't remove so much that there is basically nothing left to play anymore, before removing it
     if len(moves_under_consideration.keys()) - len(to_remove) > 3:
