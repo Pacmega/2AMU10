@@ -25,7 +25,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Computes all the possible moves in the game state,
         minus the taboo moves specified by the GameState.
-        @param game_state:  The GameState to compute all legal moves for.
+        @param game_state   The GameState to compute all legal moves for.
         @return:            A list of Moves, with each individual move being a legal one for
                                 the given GameState
         """
@@ -78,10 +78,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Finds the numbers that are still allowed to be placed in the block that
         cell [row,column] is in on the board in the given GameState.
-        @param game_state:  The GameState containing the board that cell [row,int]
+        @param game_state   The GameState containing the board that cell [row,int]
                                 should be checked on.
-        @param row:         An integer describing the row that the cell [row,column] is in.
-        @param column:      An integer describing the column that the cell [row,column] is in.
+        @param row          An integer describing the row that the cell [row,column] is in.
+        @param column       An integer describing the column that the cell [row,column] is in.
         @return:            A set containing all numbers that are not yet present in the block.
         """
         numbers_in_block = set(())
@@ -111,10 +111,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Finds the numbers that are still allowed to be placed in
         the given row on the board in the given GameState.
-        @param game_state:  The GameState containing the board that this row
+        @param game_state   The GameState containing the board that this row
                                 should be checked on.
-        @param row:         An integer describing the row to check.
-        @return:            A set containing all numbers that are not yet present in the row.
+        @param row          An integer describing the row to check.
+        @return             A set containing all numbers that are not yet present in the row.
         """
         numbers_in_row = set(())
 
@@ -134,10 +134,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Finds the numbers that are still allowed to be placed in
         the given column on the board in the given GameState.
-        @param game_state:  The GameState containing the board that this column
+        @param game_state   The GameState containing the board that this column
                                 should be checked on.
-        @param column:      An integer describing the column to check.
-        @return:            A set containing all numbers that are not yet present in the column.
+        @param column       An integer describing the column to check.
+        @return             A set containing all numbers that are not yet present in the column.
         """
         numbers_in_column = set(())
 
@@ -157,9 +157,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         possible moves and future states of the game via a minimax algorithm
         including A-B pruning, and continues to search further for as long as
         it is allowed. This function does not terminate in normal execution.
-        @param game_state:  The current GameState that the next move should be
+        @param game_state   The current GameState that the next move should be
                                 computed for.
-        @return:            Nothing. (function should not terminate in normal execution)
+        @return             Nothing. (function should not terminate in normal execution)
         """
         i = 1
 
@@ -169,7 +169,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         while True:
             if self.board_filled_in(game_state):
                 break
-
+                
             # Which player we are can be deduced from the number of previous
             #   moves, and from that we can tell whether we want to maximize
             #   or minimize our evaluation function (score P1 - score P2)
@@ -198,13 +198,13 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         also using Alpha-Beta pruning in order to stops evaluating a move sooner
         when at least one possibility has been found that proves the move to be
         worse than a previously examined move.
-        @param game_state:          The current GameState that the next move should be computed for.
-        @param depth:               The maximum amount of levels that the game tree should be explored up to.
-        @param maximizing_player:   Boolean specifying whether the current player being evaluated is
+        @param game_state           The current GameState that the next move should be computed for.
+        @param depth                The maximum amount of levels that the game tree should be explored up to.
+        @param maximizing_player    Boolean specifying whether the current player being evaluated is
                                         the one that wants to maximize the evaluation heuristic (Player 1).
-        @param alpha:               The minimum score that the maximizing player is assured of
-        @param beta:                The maximum score that the minimizing player is assured of
-        @return:                    A tuple specifying the value of this move for this player, and the corresponding
+        @param alpha                The minimum score that the maximizing player is assured of
+        @param beta                 The maximum score that the minimizing player is assured of
+        @return                     A tuple specifying the value of this move for this player, and the corresponding
                                         move.
         """
         if depth == 0 or self.board_filled_in(game_state):
@@ -217,7 +217,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 # Simulate a possible move, and recursively call minimax again
                 #   to explore further down the tree how this move plays out.
                 new_game_state = self.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth - 1, False, alpha, beta)
+                new_value, new_move = self.minimax(new_game_state, depth-1, False, alpha, beta)
 
                 if new_value > value:
                     best_move = move
@@ -236,7 +236,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 # Simulate a possible move, and recursively call minimax again
                 #   to explore further down the tree how this move plays out.
                 new_game_state = self.simulate_move(game_state, move)
-                new_value, new_move = self.minimax(new_game_state, depth - 1, True, alpha, beta)
+                new_value, new_move = self.minimax(new_game_state, depth-1, True, alpha, beta)
 
                 if new_value < value:
                     best_move = move
@@ -245,7 +245,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 if value <= alpha:
                     break
 
-                beta = max(beta, value)
+                beta = min(beta, value)
             return value, best_move
 
     def simulate_move(self, game_state: GameState, move: Move) -> GameState:
@@ -254,9 +254,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         does not check whether a move might be taboo, and instead just executes it.
         The function internally deduces from the length of game_state.moves
         for which player the given move should be played.
-        @param game_state:  The GameState to execute/simulate the given move on.
-        @param move:        The move to execute/simulate on the given GameState.
-        @return:            The new GameState after this move is performed.
+        @param game_state   The GameState to execute/simulate the given move on.
+        @param move         The move to execute/simulate on the given GameState.
+        @return             The new GameState after this move is performed.
                                 Scores, moves and board are updated.
         """
         score = 0

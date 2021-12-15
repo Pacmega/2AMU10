@@ -32,7 +32,7 @@ def check_oracle(solve_sudoku_path: str) -> None:
         print(output)
 
 
-def simulate_game(initial_board: SudokuBoard, player1: SudokuAI, player2: SudokuAI, solve_sudoku_path: str, calculation_time: float = 0.5) -> None:
+def simulate_game(initial_board: SudokuBoard, player1: SudokuAI, player2: SudokuAI, solve_sudoku_path: str, calculation_time: float = 0.5):
     """
     Simulates a game between two instances of SudokuAI, starting in initial_board. The first move is played by player1.
     @param initial_board: The initial position of the game.
@@ -108,16 +108,22 @@ def simulate_game(initial_board: SudokuBoard, player1: SudokuAI, player2: Sudoku
                         raise RuntimeError(f'Unexpected output of sudoku solver: "{output}".')
             else:
                 print(f'No move was supplied. Player {3-player_number} wins the game.')
-                return
+                return [0, 0], 3-player_number
             game_state.scores[player_number-1] = game_state.scores[player_number-1] + player_score
             print(f'Reward: {player_score}')
             print(game_state)
+
+        won = None
         if game_state.scores[0] > game_state.scores[1]:
             print('Player 1 wins the game.')
+            won = 1
         elif game_state.scores[0] == game_state.scores[1]:
             print('The game ends in a draw.')
+            won = 0
         elif game_state.scores[0] < game_state.scores[1]:
             print('Player 2 wins the game.')
+            won = 2
+        return game_state.scores, won
 
 
 def main():
