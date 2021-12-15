@@ -245,7 +245,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 if value <= alpha:
                     break
 
-                beta = max(beta, value)
+                beta = min(beta, value)
             return value, best_move
 
     def simulate_move(self, game_state: GameState, move: Move) -> GameState:
