@@ -111,7 +111,7 @@ def simulate_game(initial_board: SudokuBoard, player1: SudokuAI, player2: Sudoku
                 return [0, 0], 3-player_number
             game_state.scores[player_number-1] = game_state.scores[player_number-1] + player_score
             print(f'Reward: {player_score}')
-            # print(game_state)
+            print(game_state)
 
         won = None
         if game_state.scores[0] > game_state.scores[1]:

@@ -87,11 +87,9 @@ def compute_all_legal_moves(game_state: GameState) \
                                                                                game_state.board.m, game_state.board.n)])
                 )
 
-    all_empty_squares = allowed_moves.keys()
-
     # Lastly, remove all taboo moves
     for taboo_move in game_state.taboo_moves:
-        if (taboo_move.i, taboo_move.j) in list(all_empty_squares):
+        if (taboo_move.i, taboo_move.j) in allowed_moves:
             square_moves = allowed_moves[(taboo_move.i, taboo_move.j)]
             if taboo_move.value in square_moves:
                 allowed_moves.get((taboo_move.i, taboo_move.j)).remove(taboo_move.value)
