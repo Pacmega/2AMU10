@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 from collections import defaultdict
 import random
 
@@ -193,7 +193,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             return value, best_move
 
     @staticmethod
-    def get_valuable_moves(game_state: GameState) -> tuple[List[Move], List[Move], bool]:
+    def get_valuable_moves(game_state: GameState) -> Tuple[List[Move], List[Move], bool]:
         """
         This function computes all valuable moves, according to a set of heuristics, which are then to be explored by
         the minimax algorithm.
