@@ -54,8 +54,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
                                                moves_under_consideration: Dict[Tuple[int, int], List[int]],
                                                allowed_in_rows: List[Set[int]],
                                                allowed_in_columns: List[Set[int]],
-                                               allowed_in_blocks: Dict[Tuple[int, int], List[int]]) \
-                                               -> tuple[Dict[Tuple[int, int], List[int]], bool]:
+                                               allowed_in_blocks: Dict[Tuple[int, int], List[int]]):
     """
     This function calculates several combined heuristics (to save computational time).
     It loops over each empty square, and checks whether
@@ -101,11 +100,11 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
         if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
             can_score = True
 
-        if opponent_can_finish_if_filled or above_3_missing >= 2:
+        if (opponent_can_finish_if_filled or above_3_missing >= 2) and not can_score:
             to_remove.append(cell)
 
     # Ensure that we don't remove so much that there is basically nothing left to play anymore, before removing it
-    if len(moves_under_consideration.keys()) - len(to_remove) > 3:
+    if len(moves_under_consideration) - len(to_remove) > 3:
         for i in range(len(to_remove)):
             moves_under_consideration.pop(to_remove[i])
 
@@ -121,12 +120,12 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
     @return:                          None, moves_under_consideration is edited in-place.
     """
     to_remove = []
-    for key in moves_under_consideration.keys():
+    for key in moves_under_consideration:
         moves = moves_under_consideration[key]
         if len(moves) > 1:
             to_remove.append(key)
 
-    if len(moves_under_consideration.keys()) - len(to_remove) > 7:
+    if len(moves_under_consideration) - len(to_remove) > 7:
         # If this process would cut the options down too far, we don't want to remove.
         for key in to_remove:
             moves_under_consideration.pop(key)
