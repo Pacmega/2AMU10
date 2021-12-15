@@ -240,12 +240,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         moves_list = []
         taboo_list = []
 
-        for square in legal_moves.keys():
+        for square in legal_moves:
             moves: List[int] = legal_moves[square]
             for move in moves:
                 moves_list.append(Move(square[0], square[1], move))
 
-        for square in taboo_moves.keys():
+        for square in taboo_moves:
             moves: List[int] = taboo_moves[square]
             for move in moves:
                 taboo_list.append(Move(square[0], square[1], move))
