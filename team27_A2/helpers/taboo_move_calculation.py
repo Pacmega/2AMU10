@@ -1,5 +1,4 @@
 from typing import Dict, Tuple, List, Set
-from collections import defaultdict
 
 from competitive_sudoku.sudoku import GameState
 
@@ -10,7 +9,7 @@ def locked_candidates_rows(game_state: GameState,
                            legal_moves: Dict[Tuple[int, int], List[int]],
                            allowed_in_rows: List[Set[int]],
                            allowed_in_blocks: Dict[Tuple[int, int], List[int]],
-                           taboo_moves: defaultdict[Tuple[int, int], List[int]]):
+                           taboo_moves: Dict[Tuple[int, int], List[int]]):
     """
     Part of the taboo move detection heuristic to detect locked candidates. When a value within
     a block can only go in one row, it must be in that block for that row meaning that entering this
@@ -100,7 +99,7 @@ def locked_candidates_columns(game_state: GameState,
                               legal_moves: Dict[Tuple[int, int], List[int]],
                               allowed_in_columns: List[Set[int]],
                               allowed_in_blocks: Dict[Tuple[int, int], List[int]],
-                              taboo_moves: defaultdict[Tuple[int, int], List[int]]):
+                              taboo_moves: Dict[Tuple[int, int], List[int]]):
     """
     Part of the taboo move detection heuristic to detect locked candidates. When a value within
     a block can only go in one column, it must be in that block for that column meaning that entering this
@@ -189,7 +188,7 @@ def locked_candidates_columns(game_state: GameState,
 
 def obvious_singles(game_state: GameState,
                     legal_moves: Dict[Tuple[int, int], List[int]],
-                    taboo_moves: defaultdict[Tuple[int, int], List[int]]):
+                    taboo_moves: Dict[Tuple[int, int], List[int]]):
     """
     Taboo move detection heuristic to use obvious singles. An obvious single is a number that
     is the only legal move for a cell. When this is the case that value must clearly go there,
@@ -239,7 +238,7 @@ def obvious_singles(game_state: GameState,
 
 def hidden_singles(game_state: GameState,
                    legal_moves: Dict[Tuple[int, int], List[int]],
-                   taboo_moves: defaultdict[Tuple[int, int], List[int]]):
+                   taboo_moves: Dict[Tuple[int, int], List[int]]):
     """
     Taboo move detection heuristic to detect hidden singles. A hidden single is a number that
     is among multiple legal numbers for that cell, but where this cell is the only one in the
