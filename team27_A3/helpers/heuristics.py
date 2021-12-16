@@ -1,7 +1,8 @@
+import random
 from typing import Dict, Tuple, List, Set
 
 from competitive_sudoku.sudoku import GameState
-from team27_A2.helpers import get_block_top_left_coordinates
+from team27_A3.helpers import get_block_top_left_coordinates
 
 
 def force_highest_points_moves(game_state: GameState,
@@ -104,8 +105,14 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
             to_remove.append(cell)
 
     # Ensure that we don't remove so much that there is basically nothing left to play anymore, before removing it
-    if len(moves_under_consideration) - len(to_remove) > 3:
+    threshold = 5
+    if len(moves_under_consideration) - len(to_remove) > threshold:
         for i in range(len(to_remove)):
+            moves_under_consideration.pop(to_remove[i])
+    else:
+        subset = random.sample(to_remove,
+                               max(len(moves_under_consideration) - threshold, 0))
+        for i in range(len(subset)):
             moves_under_consideration.pop(to_remove[i])
 
     return moves_under_consideration, can_score
@@ -125,8 +132,15 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
         if len(moves) > 1:
             to_remove.append(key)
 
-    if len(moves_under_consideration) - len(to_remove) > 7:
+    threshold = 7
+    if len(moves_under_consideration) - len(to_remove) > threshold:
         # If this process would cut the options down too far, we don't want to remove.
         for key in to_remove:
             moves_under_consideration.pop(key)
+    else:
+        subset = random.sample(to_remove,
+                               max(len(moves_under_consideration) - threshold, 0))
+        for i in range(len(subset)):
+            moves_under_consideration.pop(subset[i])
+
     return

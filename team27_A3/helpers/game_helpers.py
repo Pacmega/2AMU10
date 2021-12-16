@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import List, Set, Dict, Tuple
 
-from competitive_sudoku.sudoku import GameState, Move
+from competitive_sudoku.sudoku import GameState, Move, TabooMove
 
 """
 This file contains functions that extend the functionality of the GameState class, such as calculating 
@@ -176,7 +176,7 @@ def allowed_numbers_in_column(game_state: GameState, column: int) -> Set[int]:
     return all_numbers.difference(numbers_in_column)
 
 
-def simulate_move(game_state: GameState, move: Move) -> GameState:
+def simulate_move(game_state: GameState, move: Move, taboo_move: bool) -> GameState:
     """
     Simulates the execution of the given Move on the given GameState. This function
     does not check whether a move might be taboo, and instead just executes it.
@@ -184,6 +184,7 @@ def simulate_move(game_state: GameState, move: Move) -> GameState:
     for which player the given move should be played.
     @param game_state:  The GameState to execute/simulate the given move on.
     @param move:        The move to execute/simulate on the given GameState.
+    @param taboo_move:  Whether the move is a taboo move or not
     @return:            The new GameState after this move is performed.
                             Scores, moves and board are updated.
     """
@@ -198,6 +199,10 @@ def simulate_move(game_state: GameState, move: Move) -> GameState:
     # We create a deep copy of the given game_state, so that we are sure
     #   that we do not unintentionally modify the true game state.
     future_state = deepcopy(game_state)
+    if taboo_move:
+        future_state.moves.append(TabooMove(move.i, move.j, move.value))
+        return future_state
+
     future_state.board.put(move.i, move.j, move.value)
     future_state.moves.append(move)
 

@@ -2,10 +2,10 @@ from typing import List, Tuple
 from collections import defaultdict
 import random
 
-from competitive_sudoku.sudoku import GameState, Move
+from competitive_sudoku.sudoku import GameState, Move, TabooMove
 import competitive_sudoku.sudokuai
 
-from team27_A2.helpers import game_helpers, heuristics, taboo_move_calculation
+from team27_A3.helpers import game_helpers, heuristics, taboo_move_calculation
 
 
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
@@ -54,16 +54,17 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
             valuable_moves, taboo_moves, can_score = SudokuAI.get_valuable_moves(self.game_state)
 
-            if taboo_moves and self._want_to_play_taboo(can_score):
+            if 0 < len(taboo_moves) < 20 and self._want_to_play_taboo(can_score):
                 # We want to play a taboo move here, and there are legal taboo moves available
                 self.playing_taboo = True
-                for move in taboo_moves:
-                    new_game_state = game_helpers.simulate_move(self.game_state, move)
-                    self.children.append(SudokuAI.Node(new_game_state))
+
+                taboo_move_to_play = taboo_moves[0]
+                new_game_state = game_helpers.simulate_move(self.game_state, taboo_move_to_play, True)
+                self.children.append(SudokuAI.Node(new_game_state))
             else:
                 # Create all valuable moves as new Node children of this Node, for minimax to explore
                 for move in valuable_moves:
-                    new_game_state = game_helpers.simulate_move(self.game_state, move)
+                    new_game_state = game_helpers.simulate_move(self.game_state, move, False)
                     self.children.append(SudokuAI.Node(new_game_state))
 
         def _want_to_play_taboo(self, can_score: bool) -> bool:
@@ -122,6 +123,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 break
             else:
                 self.propose_move(optimal_move)
+
+            print(i)
 
             # And now that this depth is done, on to the next!
             i += 1
@@ -248,7 +251,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         for square in taboo_moves:
             moves: List[int] = taboo_moves[square]
             for move in moves:
-                taboo_list.append(Move(square[0], square[1], move))
+                taboo_list.append(TabooMove(square[0], square[1], move))
 
         random.shuffle(moves_list)
         random.shuffle(taboo_list)
