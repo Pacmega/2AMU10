@@ -132,7 +132,7 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
         if len(moves) > 1:
             to_remove.append(key)
 
-    threshold = 7
+    threshold = 5
     if len(moves_under_consideration) - len(to_remove) > threshold:
         # If this process would cut the options down too far, we don't want to remove.
         for key in to_remove:
