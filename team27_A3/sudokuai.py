@@ -124,7 +124,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             else:
                 self.propose_move(optimal_move)
 
-            print(i)
+            # print(i)
 
             # And now that this depth is done, on to the next!
             i += 1

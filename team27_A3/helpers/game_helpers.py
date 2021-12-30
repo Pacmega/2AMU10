@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import List, Set, Dict, Tuple
 
 from competitive_sudoku.sudoku import GameState, Move, TabooMove
+import time
 
 """
 This file contains functions that extend the functionality of the GameState class, such as calculating 
@@ -58,43 +59,56 @@ def compute_all_legal_moves(game_state: GameState) \
                             (4) A dictionary of coordinates as keys (top left square of a block),
                                 with a set of the allowed numbers in the respective block as the value.
     """
+    in_row = [set(()) for i in range(game_state.board.N)]
+    in_column = [set(()) for j in range(game_state.board.N)]
 
-    # First, get all allowed numbers for each of the rows and columns
-    rows = []
-    columns = []
-    for i in range(game_state.board.N):
-        rows.append(allowed_numbers_in_row(game_state, i))
-        columns.append(allowed_numbers_in_column(game_state, i))
-
-    # Next, get all allowed numbers for each of the blocks
     all_block_indices = [(i, j)
                          for i in range(0, game_state.board.N, game_state.board.m)
                          for j in range(0, game_state.board.N, game_state.board.n)]
+    in_block: Dict[Tuple[int, int], Set] = {}
+    for index in all_block_indices:
+        in_block[index] = set(())
 
-    blocks = {}
-    for block_index in all_block_indices:
-        blocks[block_index] = allowed_numbers_in_block(game_state, block_index[0], block_index[1])
+    allowed_in_cell = {}
 
-    # Consequently, loop over each of the empty squares and take the
-    # intersection of allowed moves for the row, column and block for that square
-    allowed_moves = {}
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):
-            if game_state.board.get(i, j) == game_state.board.empty:
-                allowed_moves[(i, j)] = list(
-                    rows[i].intersection(columns[j])
-                           .intersection(blocks[get_block_top_left_coordinates(i, j,
-                                                                               game_state.board.m, game_state.board.n)])
-                )
+            cell = game_state.board.get(i, j)
+            if cell is not game_state.board.empty:
+                in_row[i].add(cell)
+                in_column[j].add(cell)
+
+                block = get_block_top_left_coordinates(i, j, game_state.board.m, game_state.board.n)
+                in_block[block].add(cell)
+            else:
+                allowed_in_cell[(i, j)] = set(())
+
+    not_in_row = [
+        set(range(1, game_state.board.N+1)).difference(in_row[i])
+        for i in range(game_state.board.N)
+    ]
+    not_in_column = [
+        set(range(1, game_state.board.N+1)).difference(in_column[i])
+        for i in range(game_state.board.N)
+    ]
+
+    not_in_block = {}
+    for key, value in in_block.items():
+        not_in_block[key] = list(set(range(1, game_state.board.N+1)).difference(value))
+
+    for row, column in allowed_in_cell:
+        allowed_in_cell[(row, column)] = list(not_in_row[row].intersection(not_in_column[column])\
+            .intersection(not_in_block[get_block_top_left_coordinates(row, column,
+                                                                      game_state.board.m, game_state.board.n)]))
 
     # Lastly, remove all taboo moves
     for taboo_move in game_state.taboo_moves:
-        if (taboo_move.i, taboo_move.j) in allowed_moves:
-            square_moves = allowed_moves[(taboo_move.i, taboo_move.j)]
+        if (taboo_move.i, taboo_move.j) in allowed_in_cell:
+            square_moves = allowed_in_cell[(taboo_move.i, taboo_move.j)]
             if taboo_move.value in square_moves:
-                allowed_moves.get((taboo_move.i, taboo_move.j)).remove(taboo_move.value)
+                allowed_in_cell.get((taboo_move.i, taboo_move.j)).remove(taboo_move.value)
 
-    return allowed_moves, rows, columns, blocks
+    return allowed_in_cell, not_in_row, not_in_column, not_in_block
 
 
 def allowed_numbers_in_block(game_state: GameState, row: int, column: int) -> Set[int]:
