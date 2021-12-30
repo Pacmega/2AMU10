@@ -73,7 +73,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
              2. A boolean denoting whether the player (or rather, the Node) calling the function could score right now.
     """
     to_remove = []
-    can_score = False
+    can_score_overall = False
 
     for cell in moves_under_consideration:
         row_index = cell[0]
@@ -98,8 +98,8 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
         above_3_missing += 1 if len(column_allowed) > 3 else 0
         above_3_missing += 1 if len(block_allowed) > 3 else 0
 
-        if len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1:
-            can_score = True
+        can_score = len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1
+        can_score_overall = can_score or can_score_overall
 
         if (opponent_can_finish_if_filled or above_3_missing >= 2) and not can_score:
             to_remove.append(cell)
@@ -115,7 +115,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
         for i in range(len(subset)):
             moves_under_consideration.pop(to_remove[i])
 
-    return moves_under_consideration, can_score
+    return moves_under_consideration, can_score_overall
 
 
 def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[int]]):
