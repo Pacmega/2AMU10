@@ -105,7 +105,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
             to_remove.append(cell)
 
     # Ensure that we don't remove so much that there is basically nothing left to play anymore, before removing it
-    threshold = 5
+    threshold = 3
     if len(moves_under_consideration) - len(to_remove) > threshold:
         for i in range(len(to_remove)):
             moves_under_consideration.pop(to_remove[i])
@@ -132,7 +132,7 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
         if len(moves) > 1:
             to_remove.append(key)
 
-    threshold = 5
+    threshold = 2
     if len(moves_under_consideration) - len(to_remove) > threshold:
         # If this process would cut the options down too far, we don't want to remove.
         for key in to_remove:

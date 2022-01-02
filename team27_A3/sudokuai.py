@@ -124,7 +124,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             else:
                 self.propose_move(optimal_move)
 
-            # print(i)
+            print("Completed depth ", i)
 
             # And now that this depth is done, on to the next!
             i += 1
@@ -256,7 +256,17 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         random.shuffle(moves_list)
         random.shuffle(taboo_list)
 
-        return moves_list, taboo_list, can_score
+        sorted_moves_list = []
+        if can_score:
+            for move in moves_list:
+                if len(rows[move.i]) == 1 or len(columns[move.j]) or \
+                        len(blocks[game_helpers.get_block_top_left_coordinates(move.i, move.j, game_state.board.m,
+                                                                               game_state.board.n)]):
+                    sorted_moves_list.insert(0, move)
+                else:
+                    sorted_moves_list.append(move)
+
+        return sorted_moves_list if can_score else moves_list, taboo_list, can_score
 
     @staticmethod
     def evaluate(game_state: GameState) -> int:
