@@ -67,7 +67,7 @@ def locked_candidates_rows(game_state: GameState,
 
                     if len(rows_allowing_number) == 1:
                         # This block has exactly one row where this value can go, meaning
-                        #   it should go in that row and we should keep track of that
+                        #   it should go in that row, and we should keep track of that
                         newly_occupied_blocks.append((top_row_of_block, leftmost_column_of_block))
                         newly_occupied_rows.append(rows_allowing_number[0])
 
@@ -157,7 +157,7 @@ def locked_candidates_columns(game_state: GameState,
 
                     if len(columns_allowing_number) == 1:
                         # This block has exactly one column where this value can go, meaning
-                        #   it should go in that column and we should keep track of that
+                        #   it should go in that column, and we should keep track of that
                         newly_occupied_blocks.append((top_row_of_block, leftmost_column_of_block))
                         newly_occupied_columns.append(columns_allowing_number[0])
 
@@ -253,7 +253,7 @@ def hidden_singles(game_state: GameState,
     #   which values within that unit have already been determined to not possibly be singles
     #   (== are legal in > 1 cell within that unit)
     non_singles_row = [[] for i in range(game_state.board.N)]
-    non_singles_column = [[] for i in range(game_state.board.N)]
+    non_singles_column = [[] for j in range(game_state.board.N)]
     non_singles_block = [[[] for col_block in range(game_state.board.N // game_state.board.n)]
                              for row_block in range(game_state.board.N // game_state.board.m)]
 

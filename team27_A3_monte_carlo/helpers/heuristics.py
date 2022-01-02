@@ -121,7 +121,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
 def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[int]]):
     """
     If there are still squares with more than one option, we want to minimize guessing and
-    minimax computation time so we decide to just remove all options of those squares.
+    minimax computation time. As such, we decide to just remove all options of those squares.
     If that means that we have less than 7 potential squares left, they are not removed.
     @param moves_under_consideration: A dict of (row,column):[values] describing which moves should be considered.
     @return:                          None, moves_under_consideration is edited in-place.

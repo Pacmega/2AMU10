@@ -9,6 +9,7 @@ import competitive_sudoku.sudokuai
 
 from team27_A3_monte_carlo.helpers import game_helpers, heuristics, taboo_move_calculation
 
+
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     """
     Sudoku AI that computes a move for a given sudoku configuration. This particular implementation
@@ -49,7 +50,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             self.uct = float('inf')
             self.uct_needs_update = True
 
-        def calculate_uct(self, parent_number_visits) -> float:
+        def calculate_uct(self, parent_number_visits):
             """
             TODO: docstring
             """
@@ -103,7 +104,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                                   grant this player points.
             @return:          A boolean describing whether we want to play a taboo move in this state or not.
             """
-            # TODO: This part is temporarily disabled because Monte Carlo doesn't seem to always want to score points.
+            # TODO: Should can_score be enabled for Monte Carlo? It regularly leaves those opportunities open anyway.
             if can_score:
                 # If we can score, we definitely don't want to play a taboo move and let the opponent score
                 return False
@@ -116,7 +117,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 # Can't score right now, but our position is acceptable. Just play normally.
                 return False
 
-        def simulate_playout(self) -> (bool, int):
+        def simulate_play_out(self) -> (bool, int):
             """
             TODO: docstring
             """
@@ -127,7 +128,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 #   where no valid moves exist but the board isn't full (meaning somewhere a taboo was missed)
 
                 if game_helpers.board_filled_in(current_state):
-                    # Simulated playout completed, check which player won (evaluation = 0 is a draw)
+                    # Simulated play-out completed, check which player won (evaluation = 0 is a draw)
                     evaluation = current_state.scores[0] - current_state.scores[1]
 
                     if evaluation > 0:
@@ -163,10 +164,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     def compute_best_move(self, game_state: GameState) -> None:
         """
-        TODO: text incorrect
-        Main agent function to call. This function iteratively explores the possible moves and
-        future states of the game via a minimax algorithm including A-B pruning,
-        and continues to search further for as long as it is allowed.
+        Main agent function to call. This function explores the possible moves and
+        future states of the game via a Monte Carlo Tree Search algorithm
+        and continues to search and find optimal moves for as long as it is allowed.
         This function does not ever return, unless a taboo move is played.
         @param game_state:  The current GameState that the next move should be computed for.
         @return:            Nothing.
@@ -183,7 +183,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             # (if we are, the root's children are all taboo moves and a random one was suggested)
             return
 
-        # TODO: Add a comment explaining what this is
+        # Since we just created a bunch of leaves, calculate their UCTs before going into Monte Carlo.
         self.treewalk_uct_checkup(root)
 
         # Which player we are can be deduced from the number of previous
@@ -222,17 +222,14 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         TODO: docstring
         """
-        # TODO: How well does this work? Does it even work as intended?
+        # TODO: How well does this entire algorithm work? Does it even work as intended?
         # Leaf selection
         highest_uct = float('-inf')
         optimal_child = None
 
         for child in node.children:
-            if child.uct_needs_update:
-                raise Exception('UCT was not updated on time')
             if child.uct == float('inf'):
-                # At most we find more of these, which would not break this score. Use this child.
-                # print('Inf child UCT found: exploring.')
+                # This child was not explored so far, so we should fix that now.
                 optimal_child = child
                 break
 
@@ -255,8 +252,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 #   we are in the visiting step and this is not a terminal state, it can have children
                 #   but doesn't yet. Enter leaf expansion step, and afterwards simulate from arbitrary leaf.
                 if node.number_visits == 0:
-                    # Simulate random playout from this node
-                    successful_simulation, winning_player = node.simulate_playout()
+                    # Simulate random play-out from this node
+                    successful_simulation, winning_player = node.simulate_play_out()
                     # print(successful_simulation)
                 else:
                     # Not the first time visiting this node, it is not a terminal state, but it does not have
@@ -294,7 +291,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             node.uct_needs_update = True
 
         return successful_simulation, winning_player
-
 
     @staticmethod
     def get_valuable_moves(game_state: GameState) -> Tuple[List[Move], List[Move], bool]:

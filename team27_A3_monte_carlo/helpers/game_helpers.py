@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import List, Set, Dict, Tuple
 
 from competitive_sudoku.sudoku import GameState, Move, TabooMove
-import time
 
 """
 This file contains functions that extend the functionality of the GameState class, such as calculating 
@@ -97,7 +96,7 @@ def compute_all_legal_moves(game_state: GameState) \
         not_in_block[key] = list(set(range(1, game_state.board.N+1)).difference(value))
 
     for row, column in allowed_in_cell:
-        allowed_in_cell[(row, column)] = list(not_in_row[row].intersection(not_in_column[column])\
+        allowed_in_cell[(row, column)] = list(not_in_row[row].intersection(not_in_column[column])
             .intersection(not_in_block[get_block_top_left_coordinates(row, column,
                                                                       game_state.board.m, game_state.board.n)]))
 
@@ -138,7 +137,7 @@ def allowed_numbers_in_block(game_state: GameState, row: int, column: int) -> Se
             if value is not game_state.board.empty:
                 numbers_in_block.add(value)
 
-    # Finally take all possible numbers, and strike from those the
+    # Finally, take all possible numbers and strike from those the
     #   ones that already appear. This gives all remaining numbers.
     all_numbers = set((range(1, game_state.board.N + 1)))
     return all_numbers.difference(numbers_in_block)
@@ -162,7 +161,7 @@ def allowed_numbers_in_row(game_state: GameState, row: int) -> Set[int]:
         if value is not game_state.board.empty:
             numbers_in_row.add(value)
 
-    # Finally take all possible numbers, and strike from those the
+    # Finally, take all possible numbers and strike from those the
     #   ones that already appear. This gives all remaining numbers.
     all_numbers = set((range(1, game_state.board.N + 1)))
     return all_numbers.difference(numbers_in_row)
