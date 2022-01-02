@@ -2,7 +2,7 @@ import random
 from typing import Dict, Tuple, List, Set
 
 from competitive_sudoku.sudoku import GameState
-from team27_A3.helpers import get_block_top_left_coordinates
+from team27_A3_monte_carlo.helpers import get_block_top_left_coordinates
 
 
 def force_highest_points_moves(game_state: GameState,
