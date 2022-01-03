@@ -47,12 +47,20 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             self.score_obtained = 0
             self.number_visits = 0
             self.frequent_visit_C = frequent_visit_c
+
+            # The UCT is stored for the parent with this node is stored inside the node instead of
+            #   calculating it every time it is needed, for slight optimization.
             self.uct = float('inf')
             self.uct_needs_update = True
 
         def calculate_uct(self, parent_number_visits):
             """
-            TODO: docstring
+            Calculates the Upper Confidence Bound for Trees (UCT) that is used by the parent of this node when
+            deciding which of its children to visit in each iteration of the Monte Carlo Tree Search. This value
+            is stored by each child for itself as it would be calculated by the parent, and the UCT stored in
+            the root node is never used.
+            @param parent_number_visits: integer describing how often the parent node has been visited so far.
+            @return: Nothing, node.uct is updated instead.
             """
             if self.number_visits == 0:
                 # Avoid a division by 0, plus since this node was not visited before
@@ -84,7 +92,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             valuable_moves, taboo_moves, can_score = SudokuAI.get_valuable_moves(self.game_state)
             # print(len(taboo_moves))
 
-            if 0 < len(taboo_moves) < 20 and self._want_to_play_taboo(can_score):
+            if 0 < len(taboo_moves) < 20 and self._want_to_play_taboo():
                 # We want to play a taboo move here, and there are legal taboo moves available
                 self.playing_taboo = True
 
@@ -97,18 +105,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                     new_game_state = game_helpers.simulate_move(self.game_state, move, False)
                     self.children.append(SudokuAI.Node(new_game_state))
 
-        def _want_to_play_taboo(self, can_score: bool) -> bool:
+        def _want_to_play_taboo(self) -> bool:
             """
-            Creates a new Node, stores the given game state, and initializes an empty list of children.
-            @param can_score: Boolean describing whether there are current valuable moves that could
-                                  grant this player points.
-            @return:          A boolean describing whether we want to play a taboo move in this state or not.
+            Helper function for extend_node to determine whether we want to play a taboo move at this moment.
+            @return: A boolean describing whether we want to play a taboo move in this state or not.
             """
-            # TODO: Should can_score be enabled for Monte Carlo? It regularly leaves those opportunities open anyway.
-            if can_score:
-                # If we can score, we definitely don't want to play a taboo move and let the opponent score
-                return False
-            elif game_helpers.even_number_of_squares_left(self.game_state) and \
+            if game_helpers.even_number_of_squares_left(self.game_state) and \
                     game_helpers.board_half_filled_in(self.game_state):
                 # We can't score, we are not playing from a position we want to be in, so use this
                 #   chance to swap turns
@@ -119,7 +121,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         def simulate_play_out(self) -> (bool, int):
             """
-            TODO: docstring
+            Starting from the GameState of this node, play a complete game using random valuable moves as found
+            by get_valuable_moves. Includes all heuristics used in our minimax agent. Note that our heuristics attempt
+            to find all taboo moves that exist but are not guaranteed to find them all, so it can happen that the
+            random play-out ends up with a board that can not be completed.
+            @return: A tuple of a boolean and an integer. The boolean describes whether the play-out successfully
+                     completed the entire board, and the integer describes which player won the game (0 = draw).
             """
             current_state = deepcopy(self.game_state)
 
@@ -154,8 +161,12 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     def treewalk_uct_checkup(self, node: Node):
         """
-        TODO: docstring
-        This does not check or update the root's UCT, but the root has no UCT.
+        Starting from node, walk through the entire tree and check if there are any children of node whose UCT values
+        have been marked as needing a recalculation (= recently visited by Monte Carlo algorithm). Every child that was
+        marked has its UCT value recalculated and updated within the child. This does not check or update the UCT of
+        the root node that is passed, but the root has no real UCT to update in the first place.
+        @param node: The root node from which to walk through the tree.
+        @return:     Nothing.
         """
         for child in node.children:
             if child.uct_needs_update:
@@ -194,20 +205,15 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         while True:
             # Complete an iteration of Monte Carlo Tree Search.
-            # self.pre_order_treewalk(root)
-            # TODO: can_score is currently not being used, and that is obvious in move 1
-            # print("Monte Carlo goes brr")
+            # TODO: can_score is not being used, and that is very noticeable. Should it be implemented?
             self.monte_carlo(root, root_is_player_1)
             self.treewalk_uct_checkup(root)
-            # self.pre_order_treewalk(root)
 
             # Pick best move to suggest
             optimal_move = None
             highest_uct = float('-inf')
 
             for child in root.children:
-                if child.uct_needs_update:
-                    raise Exception('UCT was not updated on time')
                 if child.uct != float('inf') and child.uct > highest_uct:
                     # New record UCT and this node was visited at least once,
                     #   track and track current record holder child.
@@ -220,7 +226,16 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     def monte_carlo(self, node: Node, root_is_player_1: bool) -> (bool, int):
         """
-        TODO: docstring
+        The Monte Carlo Tree Search algorithm implementation used by this agent to find the
+        best move possible. Each call of this function expands at most one leaf and runs at
+        most one simulated play-out of the game.
+        @param node:             The root node from which the Monte Carlo Tree Search algorithm should start.
+        @param root_is_player_1: Boolean describing whether the passed root node describes a GameState where it is
+                                 currently the turn of Player 1.
+        @return:                 The same (bool, int) tuple that is returned by simulate_play_out. The boolean describes
+                                 whether the play-out successfully completed the entire board, and the integer describes
+                                 which player won the game (0 = draw). These values are purely used for recursion, and
+                                 are not intended for use outside of this function.
         """
         # TODO: How well does this entire algorithm work? Does it even work as intended?
         # Leaf selection
