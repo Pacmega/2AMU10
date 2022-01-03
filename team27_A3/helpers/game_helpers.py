@@ -1,8 +1,9 @@
 from copy import deepcopy
 from typing import List, Set, Dict, Tuple
 
-from competitive_sudoku.sudoku import GameState, Move, TabooMove
+from competitive_sudoku.sudoku import GameState, Move, TabooMove, SudokuBoard
 import time
+import numpy as np
 
 """
 This file contains functions that extend the functionality of the GameState class, such as calculating 
@@ -283,3 +284,13 @@ def even_number_of_squares_left(game_state: GameState) -> bool:
     if empty_squares % 2 == 0:
         return True
     return False
+
+
+def empty_spaces_as_numpy_array(board: SudokuBoard) -> np.ndarray:
+    new_board = np.zeros((board.N, board.N), dtype=int)
+    for i in range(board.N):
+        for j in range(board.N):
+            if board.get(i, j) == board.empty:
+                new_board[i][j] = 1
+
+    return new_board
