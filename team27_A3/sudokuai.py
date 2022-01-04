@@ -303,19 +303,22 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         block_occurrences = dict(zip(unique, counts))
 
         if 1 in col_occurrences:
-            potential_points += col_occurrences[1] * 0.3
+            potential_points += col_occurrences[1] * 0.2
 
-        # if 2 in col_occurrences:
-        #     potential_points -= col_occurrences[2] * 0.2
+        if 2 in col_occurrences:
+            potential_points -= col_occurrences[2] * 0.1
 
         if 1 in row_occurrences:
-            potential_points += row_occurrences[1] * 0.3
+            potential_points += row_occurrences[1] * 0.2
 
-        # if 2 in row_occurrences:
-        #     potential_points -= row_occurrences[2] * 0.2
+        if 2 in row_occurrences:
+            potential_points -= row_occurrences[2] * 0.1
 
         if 1 in block_occurrences:
-            potential_points += block_occurrences[1] * 0.3
+            potential_points += block_occurrences[1] * 0.2
+
+        if 2 in block_occurrences:
+            potential_points -= block_occurrences[2] * 0.1
 
         if next_to_play == 0:
             score += potential_points
