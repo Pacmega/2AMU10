@@ -282,6 +282,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         next_to_play = len(game_state.moves) % 2
 
         number_positions = game_helpers.empty_spaces_as_numpy_array(game_state.board)
+        board_filled = np.sum(number_positions) == 0
+
+        if board_filled:
+            return score
 
         col_ones = np.ones((1, game_state.board.N), dtype=int)
         row_ones = np.ones((game_state.board.N, 1), dtype=int)
