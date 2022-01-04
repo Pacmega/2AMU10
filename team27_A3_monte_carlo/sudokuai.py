@@ -1,6 +1,7 @@
 from typing import List, Tuple
 from collections import defaultdict
 from copy import deepcopy
+import os
 import random
 import math
 
@@ -155,9 +156,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                     # Return that completion was NOT successful, and attach a 0 score (the score should not be used).
                     return False, 0
 
-                # Moves are shuffled within the list before it is returned, so picking the
-                #   first one == random legal move. Play a random move, then keep going.
-                current_state = game_helpers.simulate_move(current_state, moves_list[0], False)
+                current_state = game_helpers.simulate_move(current_state, random.choice(moves_list), False)
 
     def treewalk_uct_checkup(self, node: Node):
         """
@@ -171,7 +170,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         for child in node.children:
             if child.uct_needs_update:
                 child.calculate_uct(node.number_visits)
-            self.treewalk_uct_checkup(child)
+                # UCT update requirements always propagate upwards (and to direct children of anything that
+                # needs an update). Since necessity always comes from down the tree, when a node does not need
+                # an update we can be certain that no children down from this node need an update either.
+                self.treewalk_uct_checkup(child)
 
     def compute_best_move(self, game_state: GameState) -> None:
         """
@@ -182,12 +184,26 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         @param game_state:  The current GameState that the next move should be computed for.
         @return:            Nothing.
         """
-        # Initialize the root node, which is going to keep track of everything.
-        root = self.Node(game_state)
+        root = None
 
-        # Since extend node adds randomly ordered legal moves, picking the first == picking randomly.
-        root.extend_node()
-        self.propose_move(root.children[0].game_state.moves[-1])
+        # TODO: this is mainly here for testing purposes
+        save_filename = f'{self.player_number}.pkl'
+        if not game_state.moves and os.path.exists(save_filename):
+            # On turn 1, dump the previous save just to be safe.
+            os.remove(save_filename)
+        else:
+            # Not turn 1 (there are past moves), and a save from a previous turn exists.
+            root = self.load()
+
+        if not root:
+            # No tree root was loaded, create a new one using the current game state.
+            root = self.Node(game_state)
+
+        if not root.children:
+            # Find the legal moves from this game state so we can suggest a random one to start with.
+            root.extend_node()
+
+        self.propose_move(random.choice(root.children).game_state.moves[-1])
 
         if root.playing_taboo:
             # No real need to bother with Monte Carlo if we're playing taboo moves
@@ -222,6 +238,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
             # print(optimal_move)
             if optimal_move:
+                print(f'=== COMPUTE BEST MOVE === Proposing new optimal move: {optimal_move}')
                 self.propose_move(optimal_move)
 
     def monte_carlo(self, node: Node, root_is_player_1: bool) -> (bool, int):
@@ -242,24 +259,41 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         highest_uct = float('-inf')
         optimal_child = None
 
+        # TODO: Testing print
+        if not node.game_state.moves:
+            print(f'Executing Monte Carlo on root of tree')
+        else:
+            print(f'Executing Monte Carlo on node with move {node.game_state.moves[-1]}')
+
         for child in node.children:
+            print(f'Observing UCT {child.uct} of child {child.game_state.moves[-1]}')
             if child.uct == float('inf'):
+                if not node.game_state.moves:
+                    print(f'Exploring new child {child.game_state.moves[-1]} of tree root')
+                else:
+                    print(f"Exploring new child {child.game_state.moves[-1]} of node {node.game_state.moves[-1]}")
                 # This child was not explored so far, so we should fix that now.
                 optimal_child = child
                 break
 
             if child.uct > highest_uct:
-                # print(f'New record UCT: {child_uct}')
+                print(f'New record UCT: {child.uct}')
                 # New record UCT, track it and the current record holder child.
                 highest_uct = child.uct
                 optimal_child = child
 
         # If there is an optimal child, we need to dive further down to find a potential leaf.
         if optimal_child:
+            if not node.game_state.moves:
+                print(f'= Start recursion: into root node\'s optimal child {optimal_child.game_state.moves[-1]}')
+            else:
+                print(f'= Start recursion: into node {node.game_state.moves[-1]}\'s optimal child {optimal_child.game_state.moves[-1]}')
             successful_simulation, winning_player = self.monte_carlo(optimal_child, root_is_player_1)
         else:
+            print(f'Leaf node found: {node.game_state.moves[-1]}')
             if game_helpers.board_filled_in(node.game_state):
                 # This node is a terminal state. Proceed to backpropagation.
+                print(f'Terminal state hit: the move of node {node.game_state.moves[-1]} ends the game.')
                 successful_simulation = True
                 winning_player = node.game_state.scores[0] - node.game_state.scores[1]
             else:
@@ -267,27 +301,44 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 #   we are in the visiting step and this is not a terminal state, it can have children
                 #   but doesn't yet. Enter leaf expansion step, and afterwards simulate from arbitrary leaf.
                 if node.number_visits == 0:
+                    print(f'First time visiting leaf {node.game_state.moves[-1]}. Simulating random playout.')
                     # Simulate random play-out from this node
                     successful_simulation, winning_player = node.simulate_play_out()
-                    # print(successful_simulation)
+                    print(f'Random playout successful: {successful_simulation}')
                 else:
                     # Not the first time visiting this node, it is not a terminal state, but it does not have
                     #   children. It clearly can have children, so it is time to create those and simulate
                     #   from an arbitrary one of those. Calling monte_carlo again achieves that, since this
                     #   "arbitrary leaf" would be visited for the first time.
+                    print(f'Not the first time visiting leaf {node.game_state.moves[-1]}, extending node.')
                     node.extend_node()
                     for child in node.children:
                         child.calculate_uct(node.number_visits)
-                    # Since extend node adds randomly ordered legal moves, picking the first == picking random move.
-                    random_leaf = node.children[0]
+
+                    random_leaf = random.choice(node.children)
+                    print(f'= Start recursion: into previously leaf {node.game_state.moves[-1]}\'s random child {random_leaf.game_state.moves[-1]}')
                     successful_simulation, winning_player = self.monte_carlo(random_leaf, root_is_player_1)
 
-        # Backpropagation should only be done if the game was successfully simulated to a final state.
-        if successful_simulation:
+        # Full backpropagation should only be done if the game was successfully simulated to a final state.
+        # If it was not, the move this simulation started from could possibly be a taboo move meaning that we
+        #   would not want to keep trying (and failing) to explore it.
+        if not successful_simulation:
+            if not node.game_state.moves:
+                print(f'Unsuccessful simulation - Performing backpropagation on root node. Before: n = {node.number_visits} | q = {node.score_obtained}')
+            else:
+                print(f'Unsuccessful simulation - Performing backpropagation on node {node.game_state.moves[-1]}. Before: n = {node.number_visits} | q = {node.score_obtained}')
+            node.number_visits += 1
+            print(f'After backpropagation: n = {node.number_visits} | q = {node.score_obtained}')
+        else:
             # Backpropagation step: we now know who won the game in the eventual leaf. Update the score and
             #   visit counts for this current node (which might be the leaf that ran the simulation, or its
             #   parent, or further up the tree) and throw the winning_player further up the tree via recursion
             #   so that every node on the way up can do the same.
+            if not node.game_state.moves:
+                print(f'Performing backpropagation on root node. Before: n = {node.number_visits} | q = {node.score_obtained}')
+            else:
+                print(f'Performing backpropagation on node {node.game_state.moves[-1]}. Before: n = {node.number_visits} | q = {node.score_obtained}')
+
             node.number_visits += 1
 
             # The score_obtained on root's own turn (even depths) should always be <= 0,
@@ -296,14 +347,19 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             node_is_winner = (winning_player == 1 and node_is_player_1) or \
                              (winning_player == 2 and not node_is_player_1)
 
+            print(f'Winning player: {winning_player} | Root P1: {root_is_player_1} | This node won: {node_is_winner}')
             # Logic here is based on slides 15 & 16 (on-slide numbers) of the lecture slides L9_v2
             if (winning_player == 1 and root_is_player_1) or (winning_player == 2 and not root_is_player_1):
                 if node_is_winner:
                     node.score_obtained -= 1
                 else:
                     node.score_obtained += 1
+            print(f'After backpropagation: n = {node.number_visits} | q = {node.score_obtained}')
 
-            node.uct_needs_update = True
+        # Since node's number_visits is changed, its own and all its children's UCTs need an update.
+        node.uct_needs_update = True
+        for child in node.children:
+            child.uct_needs_update = True
 
         return successful_simulation, winning_player
 
