@@ -1,6 +1,7 @@
 from typing import List, Tuple
 from collections import defaultdict
 import random
+import numpy as np
 
 from competitive_sudoku.sudoku import GameState, Move, TabooMove
 import competitive_sudoku.sudokuai
@@ -54,7 +55,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
             valuable_moves, taboo_moves, can_score = SudokuAI.get_valuable_moves(self.game_state)
 
-            if 0 < len(taboo_moves) < 20 and self._want_to_play_taboo(can_score):
+            if 0 < len(taboo_moves) < 20 and len(taboo_moves) % 2 == 1 and self._want_to_play_taboo(can_score):
                 # We want to play a taboo move here, and there are legal taboo moves available
                 self.playing_taboo = True
 
@@ -278,5 +279,54 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         @return:           An integer describing the value of this state.
         """
         score = game_state.scores[0] - game_state.scores[1]
+        next_to_play = len(game_state.moves) % 2
+
+        number_positions = game_helpers.empty_spaces_as_numpy_array(game_state.board)
+        board_filled = np.sum(number_positions) == 0
+
+        if board_filled:
+            return score
+
+        col_ones = np.ones((1, game_state.board.N), dtype=int)
+        row_ones = np.ones((game_state.board.N, 1), dtype=int)
+
+        potential_points = 0
+
+        cols = np.resize(np.matmul(col_ones, number_positions), (game_state.board.N))
+        unique, counts = np.unique(cols, return_counts=True)
+        col_occurrences = dict(zip(unique, counts))
+
+        rows = np.resize(np.matmul(number_positions, row_ones), (game_state.board.N))
+        unique, counts = np.unique(rows, return_counts=True)
+        row_occurrences = dict(zip(unique, counts))
+
+        blocks = np.resize(
+            np.resize(number_positions, (game_state.board.n, game_state.board.m, game_state.board.m, game_state.board.n)).sum(axis=(1,3)),
+            (game_state.board.N))
+        unique, counts = np.unique(blocks, return_counts=True)
+        block_occurrences = dict(zip(unique, counts))
+
+        if 1 in col_occurrences:
+            potential_points += col_occurrences[1] * 0.2
+
+        if 2 in col_occurrences:
+            potential_points -= col_occurrences[2] * 0.1
+
+        if 1 in row_occurrences:
+            potential_points += row_occurrences[1] * 0.2
+
+        if 2 in row_occurrences:
+            potential_points -= row_occurrences[2] * 0.1
+
+        if 1 in block_occurrences:
+            potential_points += block_occurrences[1] * 0.2
+
+        if 2 in block_occurrences:
+            potential_points -= block_occurrences[2] * 0.1
+
+        if next_to_play == 0:
+            score += potential_points
+        else:
+            score -= potential_points
 
         return score
