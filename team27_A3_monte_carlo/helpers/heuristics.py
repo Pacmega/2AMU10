@@ -72,7 +72,8 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
              1. A dict of (row,column):[values] describing which moves should be considered.
              2. A boolean denoting whether the player (or rather, the Node) calling the function could score right now.
     """
-    to_remove = []
+    to_remove_opponent_can_finish = []
+    to_remove_very_empty = []
     can_score_overall = False
 
     for cell in moves_under_consideration:
@@ -101,19 +102,33 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
         can_score = len(row_allowed) == 1 or len(column_allowed) == 1 or len(block_allowed) == 1
         can_score_overall = can_score or can_score_overall
 
-        if (opponent_can_finish_if_filled or above_3_missing >= 2) and not can_score:
-            to_remove.append(cell)
+        if opponent_can_finish_if_filled and not can_score:
+            to_remove_opponent_can_finish.append(cell)
+        elif above_3_missing >= 2 and not can_score:
+            to_remove_very_empty.append(cell)
 
     # Ensure that we don't remove so much that there is basically nothing left to play anymore, before removing it
-    threshold = 5
-    if len(moves_under_consideration) - len(to_remove) > threshold:
-        for i in range(len(to_remove)):
-            moves_under_consideration.pop(to_remove[i])
+    # Also, we first remove the moves that would allow the opponent to score, before removing the moves that have above
+    # 3 missing, as the last are 'less bad' if we do play them. This distinction exists so that we can still remove
+    # the most important part if the combination of both bad move types would remove too much.
+    threshold = 3
+    if len(moves_under_consideration) - len(to_remove_opponent_can_finish) > threshold:
+        for i in range(len(to_remove_opponent_can_finish)):
+            moves_under_consideration.pop(to_remove_opponent_can_finish[i])
     else:
-        subset = random.sample(to_remove,
+        subset = random.sample(to_remove_opponent_can_finish,
                                max(len(moves_under_consideration) - threshold, 0))
         for i in range(len(subset)):
-            moves_under_consideration.pop(to_remove[i])
+            moves_under_consideration.pop(to_remove_opponent_can_finish[i])
+
+    if len(moves_under_consideration) - len(to_remove_very_empty) > threshold:
+        for i in range(len(to_remove_very_empty)):
+            moves_under_consideration.pop(to_remove_very_empty[i])
+    else:
+        subset = random.sample(to_remove_very_empty,
+                               max(len(moves_under_consideration) - threshold, 0))
+        for i in range(len(subset)):
+            moves_under_consideration.pop(to_remove_very_empty[i])
 
     return moves_under_consideration, can_score_overall
 
@@ -132,7 +147,7 @@ def one_move_per_square(moves_under_consideration: Dict[Tuple[int, int], List[in
         if len(moves) > 1:
             to_remove.append(key)
 
-    threshold = 5
+    threshold = 2
     if len(moves_under_consideration) - len(to_remove) > threshold:
         # If this process would cut the options down too far, we don't want to remove.
         for key in to_remove:
