@@ -187,7 +187,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         # Find the legal moves from this game state so we can suggest a random one to start with.
         root.extend_node()
-
         self.propose_move(random.choice(root.children).game_state.moves[-1])
 
         if root.playing_taboo:
@@ -206,7 +205,6 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
         while True:
             # Complete an iteration of Monte Carlo Tree Search.
-            # TODO: can_score is not being used, and that is very noticeable. Should it be implemented?
             self.monte_carlo(root, root_is_player_1)
             self.treewalk_uct_checkup(root)
 
