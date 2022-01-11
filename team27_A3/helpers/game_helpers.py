@@ -72,6 +72,9 @@ def compute_all_legal_moves(game_state: GameState) \
 
     allowed_in_cell = {}
 
+    # Loop over all squares in the board.
+    # If it is occupied, then add the number to the sets of numbers for the respective row, block and column
+    # If it is empty, initialize an empty set and add it to the allowed_in_cell object (to be looped over later)
     for i in range(game_state.board.N):
         for j in range(game_state.board.N):
             cell = game_state.board.get(i, j)
@@ -84,19 +87,28 @@ def compute_all_legal_moves(game_state: GameState) \
             else:
                 allowed_in_cell[(i, j)] = set(())
 
+    # Get sets of numbers that are not in the rows by taking the difference between all numbers from 1 until
+    # game_state.board.N and the set of numbers in the row
     not_in_row = [
         set(range(1, game_state.board.N+1)).difference(in_row[i])
         for i in range(game_state.board.N)
     ]
+
+    # Get sets of numbers that are not in the columns by taking the difference between all numbers from 1 until
+    # game_state.board.N and the set of numbers in the column
     not_in_column = [
         set(range(1, game_state.board.N+1)).difference(in_column[i])
         for i in range(game_state.board.N)
     ]
 
+    # Get sets of numbers that are not in the blocks by taking the difference between all numbers from 1 until
+    # game_state.board.N and the set of numbers in the block
     not_in_block = {}
     for key, value in in_block.items():
         not_in_block[key] = list(set(range(1, game_state.board.N+1)).difference(value))
 
+    # Get the allowed numbers for each cell by taking the intersection of allowed numbers for the respective row,
+    # column and block
     for row, column in allowed_in_cell:
         allowed_in_cell[(row, column)] = list(not_in_row[row].intersection(not_in_column[column])\
             .intersection(not_in_block[get_block_top_left_coordinates(row, column,
@@ -287,6 +299,14 @@ def even_number_of_squares_left(game_state: GameState) -> bool:
 
 
 def empty_spaces_as_numpy_array(board: SudokuBoard) -> np.ndarray:
+    """
+    Function that creates and returns a numpy array with the same size as the given sudoku board, which holds a 1 at
+    every square that is empty, and a 0 otherwise.
+    @param board:   The given SudokuBoard.
+    @return:        A boolean numpy ndarray of size = (board.m, board.n) where
+                        1 represents an empty square on the board
+                        0 represents an occupied square on the board
+    """
     new_board = np.zeros((board.N, board.N), dtype=int)
     for i in range(board.N):
         for j in range(board.N):

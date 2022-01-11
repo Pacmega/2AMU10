@@ -125,7 +125,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
             else:
                 self.propose_move(optimal_move)
 
-            print("Completed depth ", i)
+            # print("Completed depth ", i)
 
             # And now that this depth is done, on to the next!
             i += 1
@@ -257,6 +257,8 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         random.shuffle(moves_list)
         random.shuffle(taboo_list)
 
+        # If we can score, then it is beneficial for the pruning to first explore these moves.
+        # So sort the array on whether the move scores points.
         sorted_moves_list = []
         if can_score:
             for move in moves_list:
@@ -274,37 +276,55 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         """
         Calculate the heuristic that is used by the minimax algorithm
         to see which moves and options are good for either player.
-        Calculation used: Player 1's score - Player 2's score
         @param game_state: The specific GameState to calculate the value of.
         @return:           An integer describing the value of this state.
         """
+
+        # First, as basis, take the score of the game.
         score = game_state.scores[0] - game_state.scores[1]
-        next_to_play = len(game_state.moves) % 2
 
+        # Get array of squares that are empty.
         number_positions = game_helpers.empty_spaces_as_numpy_array(game_state.board)
-        board_filled = np.sum(number_positions) == 0
 
-        if board_filled:
+        # If no squares are empty, then just return the score. Game is over.
+        if np.sum(number_positions) == 0:
             return score
 
-        col_ones = np.ones((1, game_state.board.N), dtype=int)
-        row_ones = np.ones((game_state.board.N, 1), dtype=int)
+        # Store who is next to play a move (either 0 or 1)
+        next_to_play = len(game_state.moves) % 2
 
+        # Initialize potential points variable to store results of additional calculations.
         potential_points = 0
 
+        # Get the number of empty squares for each column.
+        col_ones = np.ones((1, game_state.board.N), dtype=int)
         cols = np.resize(np.matmul(col_ones, number_positions), (game_state.board.N))
+
+        # Create dictionary with (spots_free: number_of_columns)
         unique, counts = np.unique(cols, return_counts=True)
         col_occurrences = dict(zip(unique, counts))
 
+        # Get the number of empty squares for each row
+        row_ones = np.ones((game_state.board.N, 1), dtype=int)
         rows = np.resize(np.matmul(number_positions, row_ones), (game_state.board.N))
+
+        # Create dictionary with (spots_free: number_of_rows)
         unique, counts = np.unique(rows, return_counts=True)
         row_occurrences = dict(zip(unique, counts))
 
+        # Do the same for the blocks
         blocks = np.resize(
-            np.resize(number_positions, (game_state.board.n, game_state.board.m, game_state.board.m, game_state.board.n)).sum(axis=(1,3)),
+            np.resize(number_positions,
+                      (game_state.board.n, game_state.board.m, game_state.board.m, game_state.board.n)).sum(
+                axis=(1, 3)),
             (game_state.board.N))
         unique, counts = np.unique(blocks, return_counts=True)
         block_occurrences = dict(zip(unique, counts))
+
+        # Now for the scoring.
+        # If you can score in a block, column or row (meaning only 1 empty square left),
+        #   then 0.2 is added to the potential points.
+        # If there are 2 spots left, then 0.1 is removed from the potential points.
 
         if 1 in col_occurrences:
             potential_points += col_occurrences[1] * 0.2
@@ -324,6 +344,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         if 2 in block_occurrences:
             potential_points -= block_occurrences[2] * 0.1
 
+        # Depending on who is next to play, points are either added or subtracted.
         if next_to_play == 0:
             score += potential_points
         else:
