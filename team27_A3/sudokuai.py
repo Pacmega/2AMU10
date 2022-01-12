@@ -231,6 +231,14 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         taboo_move_calculation.obvious_singles(game_state, legal_moves, taboo_moves)
         taboo_move_calculation.hidden_singles(game_state, legal_moves, taboo_moves)
 
+        empty = []
+        for key, value in legal_moves.items():
+            if len(value) == 0:
+                empty.append(key)
+
+        for key in empty:
+            legal_moves.pop(key)
+
         ###
         # Then use heuristics to help choose the best possible moves
         ###
