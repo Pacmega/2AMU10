@@ -118,7 +118,11 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
         subset = random.sample(to_remove_opponent_can_finish,
                                max(len(moves_under_consideration) - threshold, 0))
         for i in range(len(subset)):
-            moves_under_consideration.pop(to_remove_opponent_can_finish[i])
+            moves_under_consideration.pop(subset[i])
+
+    for i in range(len(to_remove_opponent_can_finish)):
+        if to_remove_opponent_can_finish[i] in to_remove_very_empty:
+            to_remove_very_empty.remove(to_remove_opponent_can_finish[i])
 
     if len(moves_under_consideration) - len(to_remove_very_empty) > threshold:
         for i in range(len(to_remove_very_empty)):
@@ -127,7 +131,7 @@ def remove_moves_that_allows_opponent_to_score(game_state: GameState,
         subset = random.sample(to_remove_very_empty,
                                max(len(moves_under_consideration) - threshold, 0))
         for i in range(len(subset)):
-            moves_under_consideration.pop(to_remove_very_empty[i])
+            moves_under_consideration.pop(subset[i])
 
     return moves_under_consideration, can_score_overall
 
