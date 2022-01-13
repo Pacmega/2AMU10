@@ -350,6 +350,17 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         taboo_move_calculation.obvious_singles(game_state, legal_moves, taboo_moves)
         taboo_move_calculation.hidden_singles(game_state, legal_moves, taboo_moves)
 
+        # The heuristics might have removed so many values from some moves that there is not actually
+        #   a move left to play for that cell. If this is the case, remove the entire cell key from the
+        #   legal_moves dictionary.
+        empty = []
+        for key, value in legal_moves.items():
+            if len(value) == 0:
+                empty.append(key)
+
+        for key in empty:
+            legal_moves.pop(key)
+
         ###
         # Then use heuristics to help choose the best possible moves
         ###
